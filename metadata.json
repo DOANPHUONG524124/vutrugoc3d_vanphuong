@@ -1,0 +1,6 @@
+{
+  "name": "Vũ Trụ Góc Học – Angle Explorer 3D",
+  "description": "Ứng dụng học Toán tương tác 3D dành cho học sinh tiểu học: Nhận biết các loại góc, thực hành đo góc với thước bán nguyệt 180° và chinh phục thử thách vũ trụ.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
