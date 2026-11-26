@@ -89,6 +89,24 @@ export interface PlayerProgress {
   };
   badges: string[];
   measuredAnglesCount: number;
+  perpendicularSections?: {
+    explore: boolean;
+    lab: boolean;
+    challenge: boolean;
+    guide: boolean;
+  };
+  parallelSections?: {
+    explore: boolean;
+    lab: boolean;
+    challenge: boolean;
+    guide: boolean;
+  };
+  shapesSections?: {
+    explore: boolean;
+    lab: boolean;
+    challenge: boolean;
+    guide: boolean;
+  };
 }
 
 export const INITIAL_PROGRESS: PlayerProgress = {
@@ -109,6 +127,24 @@ export const INITIAL_PROGRESS: PlayerProgress = {
   },
   badges: [],
   measuredAnglesCount: 0,
+  perpendicularSections: {
+    explore: false,
+    lab: false,
+    challenge: false,
+    guide: false,
+  },
+  parallelSections: {
+    explore: false,
+    lab: false,
+    challenge: false,
+    guide: false,
+  },
+  shapesSections: {
+    explore: false,
+    lab: false,
+    challenge: false,
+    guide: false,
+  },
 };
 
 export interface BadgeInfo {
@@ -161,6 +197,30 @@ export const BADGE_CATALOG: BadgeInfo[] = [
     descVi: 'Chinh phục Cấp độ 3 bằng thước đo góc',
     color: '#F97316',
     unlocked: (p) => p.completedSections.level3,
+  },
+  {
+    id: 'perpendicular_master',
+    titleVi: 'Kiến Trúc Sư Vuông Góc',
+    descVi: 'Hoàn thành thực hành Ê Ke hoặc Thử Thách Hai Đường Thẳng Vuông Góc',
+    color: '#10B981',
+    unlocked: (p) =>
+      Boolean(p.perpendicularSections?.lab || p.perpendicularSections?.challenge),
+  },
+  {
+    id: 'parallel_master',
+    titleVi: 'Kĩ Sư Đường Song Song',
+    descVi: 'Hoàn thành thực hành hoặc Thử Thách Hai Đường Thẳng Song Song',
+    color: '#38BDF8',
+    unlocked: (p) =>
+      Boolean(p.parallelSections?.lab || p.parallelSections?.challenge),
+  },
+  {
+    id: 'shapes_master',
+    titleVi: 'Kiến Trúc Sư Hình Học',
+    descVi: 'Hoàn thành thực hành kéo cạnh hoặc Thử Thách Hình Thoi, Hình Bình Hành',
+    color: '#E879F9',
+    unlocked: (p) =>
+      Boolean(p.shapesSections?.lab || p.shapesSections?.challenge),
   },
 ];
 

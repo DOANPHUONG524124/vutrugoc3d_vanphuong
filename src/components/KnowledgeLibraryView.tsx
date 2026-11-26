@@ -330,7 +330,7 @@ export const KnowledgeLibraryView: React.FC<KnowledgeLibraryViewProps> = ({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h2 className="text-xl font-extrabold text-white">
-                  TIẾN ĐỘ CHINH PHỤC VŨ TRỤ GÓC 3D
+                  TIẾN ĐỘ CHINH PHỤC VŨ TRỤ HÌNH HỌC LỚP 4
                 </h2>
                 <p className="text-xs text-indigo-200">
                   Dữ liệu điểm thưởng và huy hiệu được lưu tự động trên trình duyệt của em
