@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ChallengeGameView } from './components/ChallengeGameView';
+import { CosmicJourneySection } from './components/CosmicJourneySection';
 import { ExploreAnglesView } from './components/ExploreAnglesView';
 import { KnowledgeLibraryView } from './components/KnowledgeLibraryView';
 import { ParallelChallengeView } from './components/ParallelChallengeView';
@@ -16,6 +17,7 @@ import { ShapesExploreView } from './components/ShapesExploreView';
 import { ShapesGuideView } from './components/ShapesGuideView';
 import { ShapesLabView } from './components/ShapesLabView';
 import { Space3DStage } from './components/Space3DStage';
+import { TopicRewardModal } from './components/TopicRewardModal';
 import { Tutorial3StepsView } from './components/Tutorial3StepsView';
 import {
   ChallengeLevel,
@@ -23,6 +25,14 @@ import {
   INITIAL_PROGRESS,
   PlayerProgress,
 } from './utils/challengeGenerator';
+import {
+  computeAllTopicsJourneySummary,
+  computeJourneyTotals,
+  detectNewlyCompletedTopics,
+  formatVietnameseDate,
+  JourneyTopicId,
+  resetTopicProgress,
+} from './utils/journeyProgress';
 import { soundFX } from './utils/soundEffects';
 
 export type ScreenId =
@@ -63,6 +73,7 @@ export default function App() {
   const [activeTopic, setActiveTopic] = useState<TopicId>('angles');
   const [activeAngleDeg, setActiveAngleDeg] = useState<number>(60);
   const [isMuted, setIsMuted] = useState<boolean>(() => soundFX.isMuted());
+  const [rewardModalTarget, setRewardModalTarget] = useState<JourneyTopicId | 'all' | null>(null);
 
   const [progress, setProgress] = useState<PlayerProgress>(() => {
     try {
@@ -72,6 +83,30 @@ export default function App() {
         return {
           ...INITIAL_PROGRESS,
           ...parsed,
+          topicStars: parsed.topicStars
+            ? {
+                angles: 0,
+                perpendicular: 0,
+                parallel: 0,
+                shapes: 0,
+                ...parsed.topicStars,
+              }
+            : {
+                angles: parsed.stars || 0,
+                perpendicular: 0,
+                parallel: 0,
+                shapes: 0,
+              },
+          topicQuizSeeds: {
+            angles: 1,
+            perpendicular: 1,
+            parallel: 1,
+            shapes: 1,
+            ...(parsed.topicQuizSeeds || {}),
+          },
+          studentName: parsed.studentName || '',
+          studentClass: parsed.studentClass || '',
+          completedTopicDates: parsed.completedTopicDates || {},
           completedSections: {
             ...INITIAL_PROGRESS.completedSections,
             ...(parsed.completedSections || {}),
@@ -163,79 +198,185 @@ export default function App() {
     }
   };
 
+  const addTopicStars = (
+    p: PlayerProgress,
+    topic: JourneyTopicId,
+    delta: number
+  ): PlayerProgress['topicStars'] => {
+    const base = p.topicStars ?? {
+      angles: 0,
+      perpendicular: 0,
+      parallel: 0,
+      shapes: 0,
+    };
+    return {
+      ...base,
+      [topic]: (base[topic] ?? 0) + delta,
+    };
+  };
+
+  const updateProgressWithCompletionCheck = (
+    updater: (prev: PlayerProgress) => PlayerProgress
+  ) => {
+    let newlyCompleted: JourneyTopicId[] = [];
+    setProgress((prev) => {
+      const nextRaw = updater(prev);
+      newlyCompleted = detectNewlyCompletedTopics(prev, nextRaw);
+      if (newlyCompleted.length === 0) return nextRaw;
+      const dateStr = formatVietnameseDate();
+      const nextDates = { ...(nextRaw.completedTopicDates || {}) };
+      for (const topicId of newlyCompleted) {
+        if (!nextDates[topicId]) {
+          nextDates[topicId] = dateStr;
+        }
+      }
+      return {
+        ...nextRaw,
+        completedTopicDates: nextDates,
+      };
+    });
+    setTimeout(() => {
+      if (newlyCompleted.length > 0) {
+        soundFX.playVictory();
+        setRewardModalTarget(newlyCompleted[0]);
+      }
+    }, 60);
+  };
+
+  const scrollToCosmicJourney = () => {
+    soundFX.playClick();
+    setActiveScreen('home');
+    setTimeout(() => {
+      const el = document.getElementById('cosmic-journey-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 80);
+  };
+
+  const handleChangeStudentInfo = (name: string, className: string) => {
+    setProgress((p) => ({
+      ...p,
+      studentName: name,
+      studentClass: className,
+    }));
+  };
+
+  const handleResetTopic = (topicId: JourneyTopicId) => {
+    setProgress((p) => resetTopicProgress(p, topicId));
+    if (rewardModalTarget === topicId || rewardModalTarget === 'all') {
+      setRewardModalTarget(null);
+    }
+  };
+
   const navigateTo = (screen: ScreenId) => {
     soundFX.playClick();
     setActiveScreen(screen);
     if (screen === 'explore') {
-      setProgress((p) => ({
-        ...p,
-        completedSections: { ...p.completedSections, explore: true },
-      }));
+      updateProgressWithCompletionCheck((p) => {
+        const delta = p.completedSections.explore ? 0 : 1;
+        return {
+          ...p,
+          stars: p.stars + delta,
+          topicStars: addTopicStars(p, 'angles', delta),
+          completedSections: { ...p.completedSections, explore: true },
+        };
+      });
     } else if (screen === 'library') {
-      setProgress((p) => ({
-        ...p,
-        completedSections: { ...p.completedSections, library: true },
-      }));
+      updateProgressWithCompletionCheck((p) => {
+        const delta = p.completedSections.library ? 0 : 1;
+        return {
+          ...p,
+          stars: p.stars + delta,
+          topicStars: addTopicStars(p, 'angles', delta),
+          completedSections: { ...p.completedSections, library: true },
+        };
+      });
     } else if (screen === 'perp-explore') {
       setActiveAngleDeg(90);
-      setProgress((p) => ({
-        ...p,
-        perpendicularSections: {
-          explore: true,
-          lab: p.perpendicularSections?.lab ?? false,
-          challenge: p.perpendicularSections?.challenge ?? false,
-          guide: p.perpendicularSections?.guide ?? false,
-        },
-      }));
+      updateProgressWithCompletionCheck((p) => {
+        const delta = p.perpendicularSections?.explore ? 0 : 1;
+        return {
+          ...p,
+          stars: p.stars + delta,
+          topicStars: addTopicStars(p, 'perpendicular', delta),
+          perpendicularSections: {
+            explore: true,
+            lab: p.perpendicularSections?.lab ?? false,
+            challenge: p.perpendicularSections?.challenge ?? false,
+            guide: p.perpendicularSections?.guide ?? false,
+          },
+        };
+      });
     } else if (screen === 'perp-lab' || screen === 'perp-challenge' || screen === 'perp-guide') {
       setActiveAngleDeg(90);
     } else if (screen === 'par-explore') {
-      setProgress((p) => ({
-        ...p,
-        parallelSections: {
-          explore: true,
-          lab: p.parallelSections?.lab ?? false,
-          challenge: p.parallelSections?.challenge ?? false,
-          guide: p.parallelSections?.guide ?? false,
-        },
-      }));
+      updateProgressWithCompletionCheck((p) => {
+        const delta = p.parallelSections?.explore ? 0 : 1;
+        return {
+          ...p,
+          stars: p.stars + delta,
+          topicStars: addTopicStars(p, 'parallel', delta),
+          parallelSections: {
+            explore: true,
+            lab: p.parallelSections?.lab ?? false,
+            challenge: p.parallelSections?.challenge ?? false,
+            guide: p.parallelSections?.guide ?? false,
+          },
+        };
+      });
     } else if (screen === 'shapes-explore') {
-      setProgress((p) => ({
-        ...p,
-        shapesSections: {
-          explore: true,
-          lab: p.shapesSections?.lab ?? false,
-          challenge: p.shapesSections?.challenge ?? false,
-          guide: p.shapesSections?.guide ?? false,
-        },
-      }));
+      updateProgressWithCompletionCheck((p) => {
+        const delta = p.shapesSections?.explore ? 0 : 1;
+        return {
+          ...p,
+          stars: p.stars + delta,
+          topicStars: addTopicStars(p, 'shapes', delta),
+          shapesSections: {
+            explore: true,
+            lab: p.shapesSections?.lab ?? false,
+            challenge: p.shapesSections?.challenge ?? false,
+            guide: p.shapesSections?.guide ?? false,
+          },
+        };
+      });
     }
   };
 
   const handleSelectAngleForLab = (deg: number) => {
     setActiveAngleDeg(deg);
     setActiveScreen('lab');
-    setProgress((p) => ({
-      ...p,
-      completedSections: { ...p.completedSections, explore: true },
-    }));
+    updateProgressWithCompletionCheck((p) => {
+      const delta = p.completedSections.explore ? 0 : 1;
+      return {
+        ...p,
+        stars: p.stars + delta,
+        topicStars: addTopicStars(p, 'angles', delta),
+        completedSections: { ...p.completedSections, explore: true },
+      };
+    });
   };
 
   const handleRecordSuccessfulLabMeasurement = () => {
-    setProgress((p) => ({
+    updateProgressWithCompletionCheck((p) => ({
       ...p,
       stars: p.stars + 1,
+      topicStars: addTopicStars(p, 'angles', 1),
       measuredAnglesCount: p.measuredAnglesCount + 1,
       completedSections: { ...p.completedSections, lab: true },
     }));
   };
 
   const handleCompleteTutorial = () => {
-    setProgress((p) => ({
-      ...p,
-      stars: p.completedSections.tutorial ? p.stars : p.stars + 2,
-      completedSections: { ...p.completedSections, tutorial: true },
-    }));
+    updateProgressWithCompletionCheck((p) => {
+      const delta = p.completedSections.tutorial ? 0 : 2;
+      return {
+        ...p,
+        stars: p.stars + delta,
+        topicStars: addTopicStars(p, 'angles', delta),
+        completedSections: { ...p.completedSections, tutorial: true },
+      };
+    });
   };
 
   const handleFinishChallengeLevel = (
@@ -243,11 +384,12 @@ export default function App() {
     score: number,
     starsEarned: number
   ) => {
-    setProgress((p) => {
+    updateProgressWithCompletionCheck((p) => {
       const levelKey = `level${level}` as 'level1' | 'level2' | 'level3';
       return {
         ...p,
         stars: p.stars + starsEarned,
+        topicStars: addTopicStars(p, 'angles', starsEarned),
         completedSections: {
           ...p.completedSections,
           [levelKey]: starsEarned > 0 || p.completedSections[levelKey],
@@ -261,9 +403,10 @@ export default function App() {
   };
 
   const handleRecordPerpLabSuccess = () => {
-    setProgress((p) => ({
+    updateProgressWithCompletionCheck((p) => ({
       ...p,
       stars: p.stars + 1,
+      topicStars: addTopicStars(p, 'perpendicular', 1),
       perpendicularSections: {
         explore: p.perpendicularSections?.explore ?? false,
         lab: true,
@@ -274,16 +417,20 @@ export default function App() {
   };
 
   const handleCompletePerpGuide = () => {
-    setProgress((p) => ({
-      ...p,
-      stars: p.perpendicularSections?.guide ? p.stars : p.stars + 2,
-      perpendicularSections: {
-        explore: p.perpendicularSections?.explore ?? false,
-        lab: p.perpendicularSections?.lab ?? false,
-        challenge: p.perpendicularSections?.challenge ?? false,
-        guide: true,
-      },
-    }));
+    updateProgressWithCompletionCheck((p) => {
+      const delta = p.perpendicularSections?.guide ? 0 : 2;
+      return {
+        ...p,
+        stars: p.stars + delta,
+        topicStars: addTopicStars(p, 'perpendicular', delta),
+        perpendicularSections: {
+          explore: p.perpendicularSections?.explore ?? false,
+          lab: p.perpendicularSections?.lab ?? false,
+          challenge: p.perpendicularSections?.challenge ?? false,
+          guide: true,
+        },
+      };
+    });
   };
 
   const handleFinishPerpChallengeLevel = (
@@ -291,9 +438,10 @@ export default function App() {
     _score: number,
     starsEarned: number
   ) => {
-    setProgress((p) => ({
+    updateProgressWithCompletionCheck((p) => ({
       ...p,
       stars: p.stars + starsEarned,
+      topicStars: addTopicStars(p, 'perpendicular', starsEarned),
       perpendicularSections: {
         explore: p.perpendicularSections?.explore ?? false,
         lab: p.perpendicularSections?.lab ?? false,
@@ -304,22 +452,27 @@ export default function App() {
   };
 
   const handleCompleteParExplore = () => {
-    setProgress((p) => ({
-      ...p,
-      stars: p.parallelSections?.explore ? p.stars : p.stars + 1,
-      parallelSections: {
-        explore: true,
-        lab: p.parallelSections?.lab ?? false,
-        challenge: p.parallelSections?.challenge ?? false,
-        guide: p.parallelSections?.guide ?? false,
-      },
-    }));
+    updateProgressWithCompletionCheck((p) => {
+      const delta = p.parallelSections?.explore ? 0 : 1;
+      return {
+        ...p,
+        stars: p.stars + delta,
+        topicStars: addTopicStars(p, 'parallel', delta),
+        parallelSections: {
+          explore: true,
+          lab: p.parallelSections?.lab ?? false,
+          challenge: p.parallelSections?.challenge ?? false,
+          guide: p.parallelSections?.guide ?? false,
+        },
+      };
+    });
   };
 
   const handleRecordParLabSuccess = () => {
-    setProgress((p) => ({
+    updateProgressWithCompletionCheck((p) => ({
       ...p,
       stars: p.stars + 1,
+      topicStars: addTopicStars(p, 'parallel', 1),
       parallelSections: {
         explore: p.parallelSections?.explore ?? false,
         lab: true,
@@ -330,16 +483,20 @@ export default function App() {
   };
 
   const handleCompleteParGuide = () => {
-    setProgress((p) => ({
-      ...p,
-      stars: p.parallelSections?.guide ? p.stars : p.stars + 2,
-      parallelSections: {
-        explore: p.parallelSections?.explore ?? false,
-        lab: p.parallelSections?.lab ?? false,
-        challenge: p.parallelSections?.challenge ?? false,
-        guide: true,
-      },
-    }));
+    updateProgressWithCompletionCheck((p) => {
+      const delta = p.parallelSections?.guide ? 0 : 2;
+      return {
+        ...p,
+        stars: p.stars + delta,
+        topicStars: addTopicStars(p, 'parallel', delta),
+        parallelSections: {
+          explore: p.parallelSections?.explore ?? false,
+          lab: p.parallelSections?.lab ?? false,
+          challenge: p.parallelSections?.challenge ?? false,
+          guide: true,
+        },
+      };
+    });
   };
 
   const handleFinishParChallengeLevel = (
@@ -347,9 +504,10 @@ export default function App() {
     _score: number,
     starsEarned: number
   ) => {
-    setProgress((p) => ({
+    updateProgressWithCompletionCheck((p) => ({
       ...p,
       stars: p.stars + starsEarned,
+      topicStars: addTopicStars(p, 'parallel', starsEarned),
       parallelSections: {
         explore: p.parallelSections?.explore ?? false,
         lab: p.parallelSections?.lab ?? false,
@@ -360,22 +518,27 @@ export default function App() {
   };
 
   const handleCompleteShapesExplore = () => {
-    setProgress((p) => ({
-      ...p,
-      stars: p.shapesSections?.explore ? p.stars : p.stars + 1,
-      shapesSections: {
-        explore: true,
-        lab: p.shapesSections?.lab ?? false,
-        challenge: p.shapesSections?.challenge ?? false,
-        guide: p.shapesSections?.guide ?? false,
-      },
-    }));
+    updateProgressWithCompletionCheck((p) => {
+      const delta = p.shapesSections?.explore ? 0 : 1;
+      return {
+        ...p,
+        stars: p.stars + delta,
+        topicStars: addTopicStars(p, 'shapes', delta),
+        shapesSections: {
+          explore: true,
+          lab: p.shapesSections?.lab ?? false,
+          challenge: p.shapesSections?.challenge ?? false,
+          guide: p.shapesSections?.guide ?? false,
+        },
+      };
+    });
   };
 
   const handleRecordShapesLabSuccess = () => {
-    setProgress((p) => ({
+    updateProgressWithCompletionCheck((p) => ({
       ...p,
       stars: p.stars + 1,
+      topicStars: addTopicStars(p, 'shapes', 1),
       shapesSections: {
         explore: p.shapesSections?.explore ?? false,
         lab: true,
@@ -386,16 +549,20 @@ export default function App() {
   };
 
   const handleCompleteShapesGuide = () => {
-    setProgress((p) => ({
-      ...p,
-      stars: p.shapesSections?.guide ? p.stars : p.stars + 2,
-      shapesSections: {
-        explore: p.shapesSections?.explore ?? false,
-        lab: p.shapesSections?.lab ?? false,
-        challenge: p.shapesSections?.challenge ?? false,
-        guide: true,
-      },
-    }));
+    updateProgressWithCompletionCheck((p) => {
+      const delta = p.shapesSections?.guide ? 0 : 2;
+      return {
+        ...p,
+        stars: p.stars + delta,
+        topicStars: addTopicStars(p, 'shapes', delta),
+        shapesSections: {
+          explore: p.shapesSections?.explore ?? false,
+          lab: p.shapesSections?.lab ?? false,
+          challenge: p.shapesSections?.challenge ?? false,
+          guide: true,
+        },
+      };
+    });
   };
 
   const handleFinishShapesChallengeLevel = (
@@ -403,9 +570,10 @@ export default function App() {
     _score: number,
     starsEarned: number
   ) => {
-    setProgress((p) => ({
+    updateProgressWithCompletionCheck((p) => ({
       ...p,
       stars: p.stars + starsEarned,
+      topicStars: addTopicStars(p, 'shapes', starsEarned),
       shapesSections: {
         explore: p.shapesSections?.explore ?? false,
         lab: p.shapesSections?.lab ?? false,
@@ -416,6 +584,16 @@ export default function App() {
   };
 
   const overallPercent = computeOverallProgressPercent(progress);
+  const journeyTotals = computeJourneyTotals(progress);
+  const topicSummaries = computeAllTopicsJourneySummary(progress);
+  const rewardModalStars =
+    rewardModalTarget === 'all'
+      ? journeyTotals.totalStars
+      : topicSummaries.find((t) => t.id === rewardModalTarget)?.stars ?? progress.stars;
+  const rewardModalDate =
+    rewardModalTarget && rewardModalTarget !== 'all'
+      ? progress.completedTopicDates?.[rewardModalTarget]
+      : undefined;
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden flex flex-col justify-between select-none">
@@ -451,16 +629,16 @@ export default function App() {
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               type="button"
-              onClick={() => navigateTo('library')}
+              onClick={scrollToCosmicJourney}
               className="bg-[#130E38]/95 border-2 border-yellow-400/60 rounded-2xl px-3.5 py-1.5 flex items-center gap-2.5 cursor-pointer hover:border-yellow-300"
-              title="Xem Bảng Thành Tích và Huy Hiệu"
+              title="Xem Hành Trình Chinh Phục Vũ Trụ (Cả 4 Chủ Đề)"
             >
               <span className="text-yellow-400 text-lg leading-none">★</span>
               <span
                 data-testid="hud-stars-count"
                 className="font-mono-num font-extrabold text-sm sm:text-base text-white"
               >
-                {progress.stars} Sao
+                {journeyTotals.totalStars} Sao
               </span>
               <span className="text-indigo-400">·</span>
               <span className="font-mono-num text-xs font-bold text-emerald-300">
@@ -724,8 +902,8 @@ export default function App() {
 
               {/* CENTER ZONE: Open Negative Space Viewport for 3D Robot, Planets & 3D Hologram */}
               <div className="lg:col-span-4 min-h-[210px] sm:min-h-[270px] flex flex-col items-center justify-end pointer-events-none">
-                <div className="pointer-events-auto bg-[#0B0726]/90 border border-indigo-400/40 rounded-2xl px-4 py-2 text-center shadow-xl">
-                  <div className="text-xs font-bold text-indigo-200">
+                <div className="pointer-events-auto bg-[#0B0726]/90 border border-indigo-400/40 rounded-2xl px-4 py-2.5 text-center shadow-xl">
+                  <div className="text-xs sm:text-sm font-extrabold text-indigo-100 tracking-wide">
                     {activeTopic === 'angles'
                       ? 'ĐÀI QUAN SÁT GÓC 3D TRUNG TÂM'
                       : activeTopic === 'perpendicular'
@@ -733,15 +911,6 @@ export default function App() {
                         : activeTopic === 'parallel'
                           ? 'MÔ HÌNH 3D · HAI ĐƯỜNG THẲNG SONG SONG'
                           : 'MÔ HÌNH 3D · HÌNH THOI, HÌNH BÌNH HÀNH'}
-                  </div>
-                  <div className="text-lg font-extrabold font-mono-num text-yellow-300">
-                    {activeTopic === 'angles'
-                      ? `Góc hiện tại: ${activeAngleDeg}°`
-                      : activeTopic === 'perpendicular'
-                        ? '4 góc vuông (90°) · Thước Ê Ke'
-                        : activeTopic === 'parallel'
-                          ? 'Không bao giờ cắt nhau · Đường ray 3D'
-                          : 'Cạnh đối song song · Chu vi Lớp 4'}
                   </div>
                 </div>
               </div>
@@ -760,7 +929,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-white">
-                          1. KHÁM PHÁ CÁC LOẠI GÓC
+                          1. KHÁM PHÁ TRỰC QUAN
                         </div>
                         <div className="text-xs text-indigo-100">
                           Bảo tàng 3D: Góc nhọn, góc vuông, góc tù và góc bẹt
@@ -779,7 +948,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-white">
-                          2. PHÒNG THÍ NGHIỆM ĐO GÓC
+                          2. PHÒNG THỰC HÀNH
                         </div>
                         <div className="text-xs text-pink-100">
                           Thực hành kéo và xoay thước đo góc
@@ -797,7 +966,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-white">
-                          3. THỬ THÁCH NHÀ TOÁN HỌC
+                          3. THỬ THÁCH VẬN DỤNG
                         </div>
                         <div className="text-xs text-emerald-100">
                           Chinh phục 3 hành tinh · 45 bài tập đa dạng nhận Sao Vàng
@@ -815,10 +984,10 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-slate-950">
-                          4. THƯ VIỆN KIẾN THỨC
+                          4. CẨM NANG KIẾN THỨC
                         </div>
                         <div className="text-xs font-semibold text-slate-800">
-                          Đơn vị độ (°), cấu tạo thước đo góc, lỗi thường gặp và Huy hiệu
+                          Đơn vị độ (°), cấu tạo thước đo góc và các lỗi thường gặp
                         </div>
                       </div>
                     </button>
@@ -836,7 +1005,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-white">
-                          1. KHÁM PHÁ VUÔNG GÓC
+                          1. KHÁM PHÁ TRỰC QUAN
                         </div>
                         <div className="text-xs text-indigo-100">
                           Tìm góc vuông quanh em, hiểu 4 góc vuông và cách đọc tên hai cạnh vuông góc
@@ -856,7 +1025,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-white">
-                          2. PHÒNG THÍ NGHIỆM Ê KE
+                          2. PHÒNG THỰC HÀNH
                         </div>
                         <div className="text-xs text-pink-100">
                           Kéo xoay Ê Ke: Kiểm tra góc vuông trên hình và Vẽ đường thẳng vuông góc
@@ -875,7 +1044,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-white">
-                          3. THỬ THÁCH VUÔNG GÓC
+                          3. THỬ THÁCH VẬN DỤNG
                         </div>
                         <div className="text-xs text-emerald-100">
                           Chinh phục 3 hành tinh · 26 bài tập nhận biết, đọc tên và thực hành Ê Ke
@@ -894,7 +1063,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-slate-950">
-                          4. BÀI HỌC 2 BƯỚC VẼ Ê KE
+                          4. CẨM NANG KIẾN THỨC
                         </div>
                         <div className="text-xs font-semibold text-slate-800">
                           Hướng dẫn vẽ đường vuông góc, công thức đọc tên, ghi nhớ và lỗi cần tránh
@@ -915,7 +1084,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-white">
-                          1. KHÁM PHÁ SONG SONG
+                          1. KHÁM PHÁ TRỰC QUAN
                         </div>
                         <div className="text-xs text-indigo-100">
                           Tìm đường song song quanh em, cách đọc tên và 1 cạnh song song với nhiều cạnh
@@ -935,7 +1104,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-white">
-                          2. THÍ NGHIỆM SONG SONG
+                          2. PHÒNG THỰC HÀNH
                         </div>
                         <div className="text-xs text-pink-100">
                           Vẽ đường song song 2 bước bằng Ê Ke và tìm tất cả cạnh song song trong hình
@@ -954,7 +1123,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-white">
-                          3. THỬ THÁCH SONG SONG
+                          3. THỬ THÁCH VẬN DỤNG
                         </div>
                         <div className="text-xs text-emerald-100">
                           Chinh phục 3 hành tinh · 29 bài tập đồ vật, hình bình hành, hình thang, hình thoi và vẽ Ê Ke
@@ -973,7 +1142,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-slate-950">
-                          4. BÀI HỌC VẼ SONG SONG
+                          4. CẨM NANG KIẾN THỨC
                         </div>
                         <div className="text-xs font-semibold text-slate-800">
                           Hướng dẫn vẽ CD song song AB bằng Ê Ke, công thức đọc tên và lỗi cần tránh
@@ -994,7 +1163,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-white">
-                          1. KHÁM PHÁ HAI HÌNH
+                          1. KHÁM PHÁ TRỰC QUAN
                         </div>
                         <div className="text-xs text-indigo-100">
                           Chú gà xếp hình, kim la bàn, đặc điểm hai hình và công thức Chu vi Lớp 4
@@ -1014,7 +1183,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-white">
-                          2. THÍ NGHIỆM KÉO CẠNH VÀ XOAY
+                          2. PHÒNG THỰC HÀNH
                         </div>
                         <div className="text-xs text-pink-100">
                           Kéo thanh trượt cạnh, xoay hình 360° nhiều hướng và xem chu vi cập nhật tức thì
@@ -1033,7 +1202,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-white">
-                          3. THỬ THÁCH HAI HÌNH
+                          3. THỬ THÁCH VẬN DỤNG
                         </div>
                         <div className="text-xs text-emerald-100">
                           Chinh phục 3 hành tinh · 26 bài tập nhận biết, tính Chu vi và dựng hình kéo cạnh
@@ -1052,7 +1221,7 @@ export default function App() {
                       </div>
                       <div>
                         <div className="text-base sm:text-lg font-extrabold text-slate-950">
-                          4. KIẾN THỨC VÀ CHU VI
+                          4. CẨM NANG KIẾN THỨC
                         </div>
                         <div className="text-xs font-semibold text-slate-800">
                           Tổng hợp đặc điểm, công thức Chu vi Hình bình hành, Hình thoi và ví dụ mẫu
@@ -1067,9 +1236,21 @@ export default function App() {
             {/* Flat Bottom Control Hint Line */}
             <div className="text-center text-xs font-semibold text-indigo-300/90 pt-1">
               {activeTopic === 'angles'
-                ? 'Kéo thả chuột / chạm cảm ứng để di chuyển thước đo góc · Nhấn Enter hoặc Space để vào nhanh Phòng Thí Nghiệm'
+                ? 'Kéo thả chuột / chạm cảm ứng để di chuyển thước đo góc · Nhấn Enter hoặc Space để vào nhanh Phòng Thực Hành'
                 : 'Chọn Chủ đề 1, 2, 3 hoặc 4 phía trên để chuyển đổi linh hoạt giữa Đo Góc, Vuông Góc, Song Song và Hình Thoi, Hình Bình Hành'}
             </div>
+
+            {/* Dedicated Bottom Home Section: HÀNH TRÌNH CHINH PHỤC VŨ TRỤ (All 4 Topics + PDF Rewards) */}
+            <CosmicJourneySection
+              progress={progress}
+              onNavigateScreen={(screenId, topicId) => {
+                setActiveTopic(topicId);
+                navigateTo(screenId as ScreenId);
+              }}
+              onChangeStudentInfo={handleChangeStudentInfo}
+              onOpenCertificateModal={(target) => setRewardModalTarget(target)}
+              onResetTopic={handleResetTopic}
+            />
           </div>
         )}
 
@@ -1102,6 +1283,7 @@ export default function App() {
 
         {activeScreen === 'challenge' && (
           <ChallengeGameView
+            quizSeed={progress.topicQuizSeeds?.angles ?? 1}
             onFinishChallengeLevel={handleFinishChallengeLevel}
             onAngleChangeFor3D={setActiveAngleDeg}
             onBackHome={() => navigateTo('home')}
@@ -1110,15 +1292,20 @@ export default function App() {
 
         {activeScreen === 'library' && (
           <KnowledgeLibraryView
-            progress={progress}
             onMarkLibraryRead={() =>
-              setProgress((p) => ({
-                ...p,
-                completedSections: { ...p.completedSections, library: true },
-              }))
+              updateProgressWithCompletionCheck((p) => {
+                const delta = p.completedSections.library ? 0 : 1;
+                return {
+                  ...p,
+                  stars: p.stars + delta,
+                  topicStars: addTopicStars(p, 'angles', delta),
+                  completedSections: { ...p.completedSections, library: true },
+                };
+              })
             }
             onOpenTutorial={() => navigateTo('tutorial')}
             onOpenLab={() => navigateTo('lab')}
+            onOpenJourney={scrollToCosmicJourney}
             onBackHome={() => navigateTo('home')}
           />
         )}
@@ -1148,6 +1335,7 @@ export default function App() {
 
         {activeScreen === 'perp-challenge' && (
           <PerpendicularChallengeView
+            quizSeed={progress.topicQuizSeeds?.perpendicular ?? 1}
             onFinishChallengeLevel={handleFinishPerpChallengeLevel}
             onBackHome={() => {
               setActiveTopic('perpendicular');
@@ -1191,6 +1379,7 @@ export default function App() {
 
         {activeScreen === 'par-challenge' && (
           <ParallelChallengeView
+            quizSeed={progress.topicQuizSeeds?.parallel ?? 1}
             onFinishChallengeLevel={handleFinishParChallengeLevel}
             onBackHome={() => {
               setActiveTopic('parallel');
@@ -1234,6 +1423,7 @@ export default function App() {
 
         {activeScreen === 'shapes-challenge' && (
           <ShapesChallengeView
+            quizSeed={progress.topicQuizSeeds?.shapes ?? 1}
             onFinishChallengeLevel={handleFinishShapesChallengeLevel}
             onBackHome={() => {
               setActiveTopic('shapes');
@@ -1253,6 +1443,17 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Topic Completion Celebration & PDF Reward Certificate Modal */}
+      <TopicRewardModal
+        target={rewardModalTarget}
+        studentName={progress.studentName || ''}
+        studentClass={progress.studentClass || ''}
+        starsEarned={rewardModalStars}
+        completedDateVi={rewardModalDate}
+        onChangeStudentInfo={handleChangeStudentInfo}
+        onClose={() => setRewardModalTarget(null)}
+      />
     </div>
   );
 }

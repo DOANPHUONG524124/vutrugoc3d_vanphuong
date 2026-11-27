@@ -10,10 +10,12 @@ import {
   PerpendicularDiagramPreset,
   SetSquareState,
 } from '../utils/perpendicularMath';
+import { computeQuizSeed, shuffleQuizQuestions } from '../utils/quizShuffle';
 import { soundFX } from '../utils/soundEffects';
 import { InteractiveSetSquareSVG } from './InteractiveSetSquareSVG';
 
 interface PerpendicularChallengeViewProps {
+  quizSeed?: number;
   onFinishChallengeLevel: (
     level: PerpendicularChallengeLevel,
     score: number,
@@ -275,12 +277,14 @@ const PerpendicularQuestionDiagram: React.FC<{ preset: PerpendicularDiagramPrese
 };
 
 export const PerpendicularChallengeView: React.FC<PerpendicularChallengeViewProps> = ({
+  quizSeed = 1,
   onFinishChallengeLevel,
   onBackHome,
 }) => {
   const [selectedLevel, setSelectedLevel] = useState<PerpendicularChallengeLevel>(1);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [finished, setFinished] = useState<boolean>(false);
+  const [attemptNonce, setAttemptNonce] = useState<number>(0);
 
   // Level 1 & 2 quiz state
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -295,8 +299,14 @@ export const PerpendicularChallengeView: React.FC<PerpendicularChallengeViewProp
   const [lvl3Feedback, setLvl3Feedback] = useState<string>('');
 
   const questions = useMemo(
-    () => (selectedLevel === 1 || selectedLevel === 2 ? getPerpendicularQuestionsByLevel(selectedLevel) : []),
-    [selectedLevel]
+    () =>
+      selectedLevel === 1 || selectedLevel === 2
+        ? shuffleQuizQuestions(
+            getPerpendicularQuestionsByLevel(selectedLevel),
+            computeQuizSeed(quizSeed, selectedLevel, attemptNonce, 201)
+          )
+        : [],
+    [selectedLevel, quizSeed, attemptNonce]
   );
 
   const currentLvl3Task = PERPENDICULAR_LEVEL3_TASKS[lvl3Idx] || PERPENDICULAR_LEVEL3_TASKS[0];
@@ -312,6 +322,7 @@ export const PerpendicularChallengeView: React.FC<PerpendicularChallengeViewProp
 
   const startLevel = (lvl: PerpendicularChallengeLevel) => {
     soundFX.playClick(1.15);
+    setAttemptNonce((n) => n + 1);
     setSelectedLevel(lvl);
     setCurrentIdx(0);
     setAnswers({});

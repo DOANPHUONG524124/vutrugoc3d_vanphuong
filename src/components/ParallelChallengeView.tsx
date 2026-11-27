@@ -13,9 +13,11 @@ import {
 } from '../utils/parallelMath';
 import { calculateStarReward } from '../utils/challengeGenerator';
 import { InteractiveParallelSetSquareSVG } from './InteractiveParallelSetSquareSVG';
+import { computeQuizSeed, shuffleQuizQuestions } from '../utils/quizShuffle';
 import { soundFX } from '../utils/soundEffects';
 
 interface ParallelChallengeViewProps {
+  quizSeed?: number;
   onBackHome: () => void;
   onFinishChallengeLevel: (level: ParallelChallengeLevel, score: number, starsEarned: number) => void;
 }
@@ -481,12 +483,14 @@ const ParallelDiagramSVG: React.FC<{ preset: ParallelDiagramPreset }> = ({ prese
 };
 
 export const ParallelChallengeView: React.FC<ParallelChallengeViewProps> = ({
+  quizSeed = 1,
   onBackHome,
   onFinishChallengeLevel,
 }) => {
   const [selectedLevel, setSelectedLevel] = useState<ParallelChallengeLevel>(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [attemptNonce, setAttemptNonce] = useState(0);
 
   // Level 1 & 2 quiz state
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -503,8 +507,14 @@ export const ParallelChallengeView: React.FC<ParallelChallengeViewProps> = ({
   const [lvl3Feedback, setLvl3Feedback] = useState<string>('');
 
   const questions = useMemo(
-    () => (selectedLevel === 3 ? [] : getParallelQuestionsByLevel(selectedLevel)),
-    [selectedLevel]
+    () =>
+      selectedLevel === 3
+        ? []
+        : shuffleQuizQuestions(
+            getParallelQuestionsByLevel(selectedLevel),
+            computeQuizSeed(quizSeed, selectedLevel, attemptNonce, 301)
+          ),
+    [selectedLevel, quizSeed, attemptNonce]
   );
 
   const currentLvl3Task = PARALLEL_DRAW_TASKS[lvl3Idx];
@@ -515,6 +525,7 @@ export const ParallelChallengeView: React.FC<ParallelChallengeViewProps> = ({
 
   const startLevel = (lvl: ParallelChallengeLevel) => {
     soundFX.playClick();
+    setAttemptNonce((n) => n + 1);
     setSelectedLevel(lvl);
     setIsPlaying(true);
     setFinished(false);

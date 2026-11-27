@@ -71,8 +71,20 @@ export interface ChallengeQuestion {
   visualSpec: ChallengeVisualSpec;
 }
 
+export interface TopicStarsMap {
+  angles: number;
+  perpendicular: number;
+  parallel: number;
+  shapes: number;
+}
+
 export interface PlayerProgress {
   stars: number;
+  topicStars?: TopicStarsMap;
+  topicQuizSeeds?: TopicStarsMap;
+  studentName?: string;
+  studentClass?: string;
+  completedTopicDates?: Partial<Record<keyof TopicStarsMap, string>>;
   completedSections: {
     explore: boolean;
     lab: boolean;
@@ -111,6 +123,21 @@ export interface PlayerProgress {
 
 export const INITIAL_PROGRESS: PlayerProgress = {
   stars: 0,
+  topicStars: {
+    angles: 0,
+    perpendicular: 0,
+    parallel: 0,
+    shapes: 0,
+  },
+  topicQuizSeeds: {
+    angles: 1,
+    perpendicular: 1,
+    parallel: 1,
+    shapes: 1,
+  },
+  studentName: '',
+  studentClass: '',
+  completedTopicDates: {},
   completedSections: {
     explore: false,
     lab: false,
@@ -149,6 +176,7 @@ export const INITIAL_PROGRESS: PlayerProgress = {
 
 export interface BadgeInfo {
   id: string;
+  topicTag: string;
   titleVi: string;
   descVi: string;
   color: string;
@@ -158,69 +186,94 @@ export interface BadgeInfo {
 export const BADGE_CATALOG: BadgeInfo[] = [
   {
     id: 'explorer_badge',
+    topicTag: 'Chủ đề 1',
     titleVi: 'Nhà Thám Hiểm Góc',
-    descVi: 'Khám phá trọn vẹn Bảo tàng các loại góc 3D',
+    descVi: 'Hoàn thành Khám phá trực quan các loại góc 3D',
     color: '#FACC15',
     unlocked: (p) => p.completedSections.explore,
   },
   {
-    id: 'tutorial_badge',
-    titleVi: 'Phi Công Căn Chỉnh',
-    descVi: 'Hoàn thành bài học 3 bước đặt thước đo góc chuẩn xác',
-    color: '#38BDF8',
-    unlocked: (p) => p.completedSections.tutorial,
-  },
-  {
     id: 'lab_scientist',
-    titleVi: 'Chuyên Gia Thí Nghiệm',
-    descVi: 'Thực hành đo chính xác ít nhất 3 góc tại Phòng Thí Nghiệm 180°',
+    topicTag: 'Chủ đề 1',
+    titleVi: 'Chuyên Gia Thước Đo Góc',
+    descVi: 'Hoàn thành Phòng thực hành đo góc bằng thước đo góc 180°',
     color: '#22C55E',
-    unlocked: (p) => p.measuredAnglesCount >= 3 || p.completedSections.lab,
+    unlocked: (p) => p.measuredAnglesCount >= 1 || p.completedSections.lab,
   },
   {
-    id: 'planet_1_hero',
-    titleVi: 'Nhà Du Hành Tập Sự',
-    descVi: 'Vượt qua Cấp độ 1 tại Hành Tinh Sao Thủy',
-    color: '#FF2E93',
-    unlocked: (p) => p.completedSections.level1,
-  },
-  {
-    id: 'planet_2_hero',
-    titleVi: 'Nhà Khoa Học Nhí',
-    descVi: 'Vượt qua Cấp độ 2 tại Hành Tinh Sao Mộc',
-    color: '#A855F7',
-    unlocked: (p) => p.completedSections.level2,
-  },
-  {
-    id: 'master_protractor',
-    titleVi: 'Bậc Thầy Đo Góc 180°',
-    descVi: 'Chinh phục Cấp độ 3 bằng thước đo góc',
-    color: '#F97316',
-    unlocked: (p) => p.completedSections.level3,
+    id: 'angles_champion',
+    topicTag: 'Chủ đề 1',
+    titleVi: 'Bậc Thầy Góc và Đo Góc',
+    descVi: 'Hoàn thành đủ 4/4 mục của Chủ đề 1: Góc và Đo Góc',
+    color: '#F59E0B',
+    unlocked: (p) =>
+      p.completedSections.explore &&
+      p.completedSections.lab &&
+      (p.completedSections.level1 || p.completedSections.level2 || p.completedSections.level3) &&
+      (p.completedSections.library || p.completedSections.tutorial),
   },
   {
     id: 'perpendicular_master',
+    topicTag: 'Chủ đề 2',
     titleVi: 'Kiến Trúc Sư Vuông Góc',
-    descVi: 'Hoàn thành thực hành Ê Ke hoặc Thử Thách Hai Đường Thẳng Vuông Góc',
+    descVi: 'Hoàn thành Phòng thực hành Ê Ke hoặc Thử thách Chủ đề 2',
     color: '#10B981',
     unlocked: (p) =>
       Boolean(p.perpendicularSections?.lab || p.perpendicularSections?.challenge),
   },
   {
+    id: 'perpendicular_champion',
+    topicTag: 'Chủ đề 2',
+    titleVi: 'Ngôi Sao Góc Vuông 90°',
+    descVi: 'Hoàn thành đủ 4/4 mục của Chủ đề 2: Hai Đường Thẳng Vuông Góc',
+    color: '#34D399',
+    unlocked: (p) =>
+      Boolean(
+        p.perpendicularSections?.explore &&
+          p.perpendicularSections?.lab &&
+          p.perpendicularSections?.challenge &&
+          p.perpendicularSections?.guide
+      ),
+  },
+  {
     id: 'parallel_master',
+    topicTag: 'Chủ đề 3',
     titleVi: 'Kĩ Sư Đường Song Song',
-    descVi: 'Hoàn thành thực hành hoặc Thử Thách Hai Đường Thẳng Song Song',
+    descVi: 'Hoàn thành Phòng thực hành hoặc Thử thách Chủ đề 3',
     color: '#38BDF8',
     unlocked: (p) =>
       Boolean(p.parallelSections?.lab || p.parallelSections?.challenge),
   },
   {
+    id: 'parallel_champion',
+    topicTag: 'Chủ đề 3',
+    titleVi: 'Hoa Tiêu Đường Ray 3D',
+    descVi: 'Hoàn thành đủ 4/4 mục của Chủ đề 3: Hai Đường Thẳng Song Song',
+    color: '#0EA5E9',
+    unlocked: (p) =>
+      Boolean(
+        p.parallelSections?.explore &&
+          p.parallelSections?.lab &&
+          p.parallelSections?.challenge &&
+          p.parallelSections?.guide
+      ),
+  },
+  {
     id: 'shapes_master',
+    topicTag: 'Chủ đề 4',
     titleVi: 'Kiến Trúc Sư Hình Học',
-    descVi: 'Hoàn thành thực hành kéo cạnh hoặc Thử Thách Hình Thoi, Hình Bình Hành',
+    descVi: 'Hoàn thành Phòng thực hành kéo cạnh hoặc Thử thách Chủ đề 4',
     color: '#E879F9',
     unlocked: (p) =>
       Boolean(p.shapesSections?.lab || p.shapesSections?.challenge),
+  },
+  {
+    id: 'universe_grand_master',
+    topicTag: 'Toàn Vũ Trụ',
+    titleVi: 'Chinh Phục Vũ Trụ Hình Học',
+    descVi: 'Hoàn thành xuất sắc cả 4 chủ đề Hình học Lớp 4 (100%)',
+    color: '#FACC15',
+    unlocked: (p) => computeOverallProgressPercent(p) === 100,
   },
 ];
 
@@ -234,9 +287,30 @@ export function calculateStarReward(correctCount: number, totalQuestions = 15): 
 }
 
 export function computeOverallProgressPercent(p: PlayerProgress): number {
-  const keys = Object.keys(p.completedSections) as Array<keyof PlayerProgress['completedSections']>;
-  const doneCount = keys.filter((k) => p.completedSections[k]).length;
-  return Math.round((doneCount / keys.length) * 100);
+  const checks: boolean[] = [
+    // Chủ đề 1: Góc và Đo Góc (4 mục)
+    Boolean(p.completedSections.explore),
+    Boolean(p.completedSections.lab),
+    Boolean(p.completedSections.level1 || p.completedSections.level2 || p.completedSections.level3),
+    Boolean(p.completedSections.library || p.completedSections.tutorial),
+    // Chủ đề 2: Hai Đường Thẳng Vuông Góc (4 mục)
+    Boolean(p.perpendicularSections?.explore),
+    Boolean(p.perpendicularSections?.lab),
+    Boolean(p.perpendicularSections?.challenge),
+    Boolean(p.perpendicularSections?.guide),
+    // Chủ đề 3: Hai Đường Thẳng Song Song (4 mục)
+    Boolean(p.parallelSections?.explore),
+    Boolean(p.parallelSections?.lab),
+    Boolean(p.parallelSections?.challenge),
+    Boolean(p.parallelSections?.guide),
+    // Chủ đề 4: Hình Thoi, Hình Bình Hành (4 mục)
+    Boolean(p.shapesSections?.explore),
+    Boolean(p.shapesSections?.lab),
+    Boolean(p.shapesSections?.challenge),
+    Boolean(p.shapesSections?.guide),
+  ];
+  const doneCount = checks.filter(Boolean).length;
+  return Math.round((doneCount / checks.length) * 100);
 }
 
 const LEVEL1_BANK: Omit<ChallengeQuestion, 'id'>[] = [

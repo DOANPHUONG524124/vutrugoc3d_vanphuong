@@ -114,6 +114,25 @@ class SoundSystem {
     });
   }
 
+  public playVictory(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51];
+    notes.forEach((freq, i) => {
+      const now = ctx.currentTime + i * 0.09;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.32);
+    });
+  }
+
   public playWrong(): void {
     const ctx = this.getContext();
     if (!ctx) return;

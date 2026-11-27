@@ -15,9 +15,11 @@ import {
   ShapesChallengeQuestion,
   ShapesDiagramPreset,
 } from '../utils/shapesMath';
+import { computeQuizSeed, shuffleQuizQuestions } from '../utils/quizShuffle';
 import { soundFX } from '../utils/soundEffects';
 
 interface ShapesChallengeViewProps {
+  quizSeed?: number;
   onBackHome: () => void;
   onFinishChallengeLevel: (
     level: ShapesChallengeLevel,
@@ -327,11 +329,13 @@ const ShapesDiagramSVG: React.FC<{ preset: ShapesDiagramPreset }> = ({ preset })
 };
 
 export const ShapesChallengeView: React.FC<ShapesChallengeViewProps> = ({
+  quizSeed = 1,
   onBackHome,
   onFinishChallengeLevel,
 }) => {
   const [phase, setPhase] = useState<'hub' | 'playing_mcq' | 'playing_lvl3' | 'summary'>('hub');
   const [selectedLevel, setSelectedLevel] = useState<ShapesChallengeLevel>(1);
+  const [attemptNonce, setAttemptNonce] = useState<number>(0);
 
   // MCQ state (Levels 1 & 2)
   const [questions, setQuestions] = useState<ShapesChallengeQuestion[]>([]);
@@ -352,11 +356,16 @@ export const ShapesChallengeView: React.FC<ShapesChallengeViewProps> = ({
 
   const startLevel = (lvl: ShapesChallengeLevel) => {
     soundFX.playClick(1.15);
+    const nextAttempt = attemptNonce + 1;
+    setAttemptNonce(nextAttempt);
     setSelectedLevel(lvl);
     setScore(0);
 
     if (lvl === 1 || lvl === 2) {
-      const qs = getShapesQuestionsByLevel(lvl);
+      const qs = shuffleQuizQuestions(
+        getShapesQuestionsByLevel(lvl),
+        computeQuizSeed(quizSeed, lvl, nextAttempt, 401)
+      );
       setQuestions(qs);
       setQIdx(0);
       setSelectedOption(null);

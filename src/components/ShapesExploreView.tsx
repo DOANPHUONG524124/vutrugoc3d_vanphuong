@@ -12,6 +12,100 @@ interface ShapesExploreViewProps {
 }
 
 type ExploreTab = 'parallelogram' | 'rhombus' | 'compare' | 'perimeter';
+type ParaExampleId = 'tangram' | 'staircase' | 'awning' | 'ruler';
+type RhombusExampleId = 'compass' | 'kite' | 'lattice' | 'sign';
+
+const PARA_EXAMPLES: Array<{
+  id: ParaExampleId;
+  icon: string;
+  title: string;
+  heading: string;
+  desc: string;
+  robotTip: string;
+}> = [
+  {
+    id: 'tangram',
+    icon: '🧩',
+    title: 'Miếng ghép xếp hình',
+    heading: 'Câu chuyện xếp hình chú gà',
+    desc: 'Mảnh hình bình hành trong bộ 7 mảnh ghép trí tuệ',
+    robotTip:
+      'Quan sát đuôi chú gà xếp hình kìa! Mảnh ghép màu đỏ đó có hai cặp cạnh đối diện song song và bằng nhau — đó chính là HÌNH BÌNH HÀNH!',
+  },
+  {
+    id: 'staircase',
+    icon: '🏠',
+    title: 'Bậc lan can cầu thang',
+    heading: 'Khung lan can cầu thang nghiêng',
+    desc: 'Các khung nghiêng song song đều nhau trên cầu thang',
+    robotTip:
+      'Nhìn khung lan can cầu thang kìa! Tay vịn phía trên song song với thanh đỡ phía dưới, còn hai thanh trụ đứng song song với nhau tạo thành HÌNH BÌNH HÀNH!',
+  },
+  {
+    id: 'awning',
+    icon: '🏢',
+    title: 'Mái hiên và ô kính nghiêng',
+    heading: 'Mái hiên và ô kính kiến trúc nghiêng',
+    desc: 'Các tấm kính kiến trúc cắt vát có 2 cặp cạnh song song',
+    robotTip:
+      'Những ô kính và mái hiên nghiêng trên tòa nhà đều có hai cặp cạnh đối diện song song và bằng nhau, tạo nên các HÌNH BÌNH HÀNH rất đẹp mắt!',
+  },
+  {
+    id: 'ruler',
+    icon: '📐',
+    title: 'Thanh thước nối song song',
+    heading: 'Bộ thanh thước nối song song',
+    desc: 'Hai thanh gỗ đối diện luôn song song và bằng nhau',
+    robotTip:
+      'Hai thanh thước ngang bằng nhau nối với nhau bằng hai thanh ngắn bằng nhau tạo thành bộ khung HÌNH BÌNH HÀNH giúp vẽ đường thẳng song song cực chuẩn!',
+  },
+];
+
+const RHOMBUS_EXAMPLES: Array<{
+  id: RhombusExampleId;
+  icon: string;
+  title: string;
+  heading: string;
+  desc: string;
+  robotTip: string;
+}> = [
+  {
+    id: 'compass',
+    icon: '🧭',
+    title: 'Kim nam châm la bàn',
+    heading: 'Chiếc kim nam châm của la bàn',
+    desc: '4 cạnh thon đều bằng nhau giúp chỉ hướng Bắc – Nam',
+    robotTip:
+      'Nhìn chiếc kim nam châm của la bàn kìa! Kim có hai cặp cạnh đối diện song song và cả BỐN CẠNH đều bằng nhau — đó chính là HÌNH THOI đấy em ạ!',
+  },
+  {
+    id: 'kite',
+    icon: '🪁',
+    title: 'Con diều hình thoi',
+    heading: 'Cánh diều hình thoi bay trên trời',
+    desc: 'Khung con diều có 4 cạnh viền bằng nhau cân đối',
+    robotTip:
+      'Chiếc diều hình thoi có 4 cạnh viền bằng nhau tăm tắp và 2 cặp cạnh đối diện song song giúp cánh diều đón gió thật cân bằng!',
+  },
+  {
+    id: 'lattice',
+    icon: '💠',
+    title: 'Ô lưới sắt mắt cáo',
+    heading: 'Cánh cổng lưới sắt mắt cáo',
+    desc: 'Các ô lưới trên cánh cổng xếp đều có dạng hình thoi',
+    robotTip:
+      'Trên cánh cổng sắt xếp mắt cáo, mỗi ô lưới nhỏ đều được ghép từ 4 thanh sắt ngắn bằng nhau và đối diện song song — tạo thành rất nhiều HÌNH THOI!',
+  },
+  {
+    id: 'sign',
+    icon: '⚠️',
+    title: 'Biển báo giao thông',
+    heading: 'Biển báo giao thông hình thoi',
+    desc: 'Biển báo đặt dựng theo hình viên kim cương 4 cạnh bằng nhau',
+    robotTip:
+      'Tấm biển báo giao thông màu vàng đặt dựng nghiêng có 4 cạnh viền bằng nhau và hai cặp cạnh đối diện song song là hình ảnh HÌNH THOI rất quen thuộc trên đường phố!',
+  },
+];
 
 export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
   onBackHome,
@@ -21,14 +115,24 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
   const [activeTab, setActiveTab] = useState<ExploreTab>('parallelogram');
   const [paraHighlightPair, setParaHighlightPair] = useState<'none' | 'ab_dc' | 'ad_bc' | 'all'>('all');
   const [rhombusHighlight, setRhombusHighlight] = useState<'all' | 'pair1' | 'pair2'>('all');
-  const [roosterTailHighlighted, setRoosterTailHighlighted] = useState<boolean>(true);
-  const [compassNeedleHighlighted, setCompassNeedleHighlighted] = useState<boolean>(true);
+
+  const [selectedParaExample, setSelectedParaExample] = useState<ParaExampleId>('tangram');
+  const [paraHighlightActive, setParaHighlightActive] = useState<boolean>(true);
+
+  const [selectedRhombusExample, setSelectedRhombusExample] = useState<RhombusExampleId>('compass');
+  const [rhombusHighlightActive, setRhombusHighlightActive] = useState<boolean>(true);
+
   const [miniCheckAnswer, setMiniCheckAnswer] = useState<string | null>(null);
 
   // Interactive perimeter preview inside Tab 4
   const [sampleParaA, setSampleParaA] = useState<number>(6);
   const [sampleParaB, setSampleParaB] = useState<number>(4);
   const [sampleRhombusA, setSampleRhombusA] = useState<number>(5);
+
+  const activeParaMeta =
+    PARA_EXAMPLES.find((e) => e.id === selectedParaExample) ?? PARA_EXAMPLES[0];
+  const activeRhombusMeta =
+    RHOMBUS_EXAMPLES.find((e) => e.id === selectedRhombusExample) ?? RHOMBUS_EXAMPLES[0];
 
   const handleSelectTab = (tab: ExploreTab) => {
     soundFX.playClick(1.08);
@@ -83,10 +187,8 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
         </div>
         <div className="flex-1 text-xs sm:text-sm text-indigo-100 leading-relaxed font-medium">
           <span className="font-extrabold text-yellow-300">Robot Toán Học: </span>
-          {activeTab === 'parallelogram' &&
-            'Quan sát đuôi chú gà xếp hình kìa! Mảnh ghép màu đỏ đó có hai cặp cạnh đối diện song song và bằng nhau — đó chính là HÌNH BÌNH HÀNH. Bấm vào các nút cặp cạnh để kiểm tra trên lưới ô vuông nhé!'}
-          {activeTab === 'rhombus' &&
-            'Nhìn chiếc kim nam châm của la bàn kìa! Kim có hai cặp cạnh đối diện song song và cả BỐN CẠNH đều bằng nhau — đó chính là HÌNH THOI đấy em ạ!'}
+          {activeTab === 'parallelogram' && activeParaMeta.robotTip}
+          {activeTab === 'rhombus' && activeRhombusMeta.robotTip}
           {activeTab === 'compare' &&
             'Hình bình hành và Hình thoi giống nhau ở điểm nào và khác nhau ở điểm nào? Cùng Robot Toán Học đặt hai hình cạnh nhau để so sánh thật rõ nhé!'}
           {activeTab === 'perimeter' &&
@@ -121,84 +223,245 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
       {/* TAB 1: HÌNH BÌNH HÀNH */}
       {activeTab === 'parallelogram' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          {/* Left: Tangram Rooster & Real-World Cards */}
+          {/* Left: Interactive Real-World Examples Showcase */}
           <div className="lg:col-span-5 card-3d-cosmic rounded-3xl p-5 border-2 border-sky-400/60 space-y-4">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-base sm:text-lg font-extrabold text-sky-300">
-                🐓 Câu chuyện xếp hình chú gà
+              <h3
+                data-testid="para-example-heading"
+                className="text-base sm:text-lg font-extrabold text-sky-300"
+              >
+                {activeParaMeta.icon} {activeParaMeta.heading}
               </h3>
               <button
                 type="button"
                 onClick={() => {
                   soundFX.playSnap();
-                  setRoosterTailHighlighted((v) => !v);
+                  setParaHighlightActive((v) => !v);
                 }}
-                className="px-3 py-1 rounded-lg bg-rose-500/20 border border-rose-400/60 text-rose-200 text-xs font-extrabold cursor-pointer hover:bg-rose-500/35"
+                className="px-3 py-1 rounded-lg bg-rose-500/20 border border-rose-400/60 text-rose-200 text-xs font-extrabold cursor-pointer hover:bg-rose-500/35 shrink-0"
               >
-                {roosterTailHighlighted ? '✨ Đang nổi bật đuôi gà' : 'Bấm soi đuôi gà'}
+                {paraHighlightActive ? '✨ Đang soi hình' : 'Bấm soi hình'}
               </button>
             </div>
 
             <div className="bg-[#0B0826] rounded-2xl p-3 border border-indigo-400/40">
-              <svg viewBox="0 0 380 220" className="w-full h-auto block">
-                <rect x="0" y="0" width="380" height="220" rx="12" fill="#0D0A2A" />
-                {/* Speech bubbles */}
-                <rect x="14" y="14" width="142" height="34" rx="10" fill="#1E1B4B" stroke="#38BDF8" strokeWidth="1.5" />
-                <text x="85" y="35" textAnchor="middle" fill="#E0F2FE" fontSize="12" fontWeight="700">
-                  Đuôi con gà là hình gì?
-                </text>
-                <rect x="206" y="14" width="160" height="34" rx="10" fill="#3B0764" stroke="#F472B6" strokeWidth="1.5" />
-                <text x="286" y="35" textAnchor="middle" fill="#FCE7F3" fontSize="12" fontWeight="800">
-                  Là hình bình hành đó!
-                </text>
+              {selectedParaExample === 'tangram' && (
+                <svg viewBox="0 0 380 220" className="w-full h-auto block">
+                  <rect x="0" y="0" width="380" height="220" rx="12" fill="#0D0A2A" />
+                  <rect x="14" y="14" width="142" height="34" rx="10" fill="#1E1B4B" stroke="#38BDF8" strokeWidth="1.5" />
+                  <text x="85" y="35" textAnchor="middle" fill="#E0F2FE" fontSize="12" fontWeight="700">
+                    Đuôi con gà là hình gì?
+                  </text>
+                  <rect x="206" y="14" width="160" height="34" rx="10" fill="#3B0764" stroke="#F472B6" strokeWidth="1.5" />
+                  <text x="286" y="35" textAnchor="middle" fill="#FCE7F3" fontSize="12" fontWeight="800">
+                    Là hình bình hành đó!
+                  </text>
 
-                {/* Tangram Rooster */}
-                {/* Head (red triangle) */}
-                <polygon points="108,86 134,64 160,86" fill="#EF4444" stroke="#0F172A" strokeWidth="2" />
-                {/* Neck (orange square) */}
-                <polygon points="124,86 158,86 158,120 124,120" fill="#F97316" stroke="#0F172A" strokeWidth="2" />
-                {/* Body (large green triangle) */}
-                <polygon points="124,120 236,120 180,176" fill="#10B981" stroke="#0F172A" strokeWidth="2" />
-                {/* Foot left (small blue triangle) */}
-                <polygon points="154,150 180,176 142,176" fill="#38BDF8" stroke="#0F172A" strokeWidth="2" />
-                {/* Foot bottom (medium blue triangle) */}
-                <polygon points="180,176 180,206 148,206" fill="#0284C7" stroke="#0F172A" strokeWidth="2" />
-                {/* Tail (RED PARALLELOGRAM) */}
-                <polygon
-                  points="210,120 242,88 294,88 262,120"
-                  fill="#F43F5E"
-                  stroke={roosterTailHighlighted ? '#FACC15' : '#0F172A'}
-                  strokeWidth={roosterTailHighlighted ? '4.5' : '2'}
-                />
-                {roosterTailHighlighted && (
-                  <g>
-                    <line x1="274" y1="74" x2="258" y2="96" stroke="#FACC15" strokeWidth="2.5" strokeDasharray="4 3" />
-                    <rect x="242" y="138" width="128" height="30" rx="8" fill="#FACC15" />
-                    <text x="306" y="157" textAnchor="middle" fill="#0F172A" fontSize="12" fontWeight="900">
-                      HÌNH BÌNH HÀNH
-                    </text>
-                  </g>
-                )}
-              </svg>
+                  {/* Tangram Rooster */}
+                  <polygon points="108,86 134,64 160,86" fill="#EF4444" stroke="#0F172A" strokeWidth="2" />
+                  <polygon points="124,86 158,86 158,120 124,120" fill="#F97316" stroke="#0F172A" strokeWidth="2" />
+                  <polygon points="124,120 236,120 180,176" fill="#10B981" stroke="#0F172A" strokeWidth="2" />
+                  <polygon points="154,150 180,176 142,176" fill="#38BDF8" stroke="#0F172A" strokeWidth="2" />
+                  <polygon points="180,176 180,206 148,206" fill="#0284C7" stroke="#0F172A" strokeWidth="2" />
+                  {/* Tail (RED PARALLELOGRAM) */}
+                  <polygon
+                    points="210,120 242,88 294,88 262,120"
+                    fill="#F43F5E"
+                    stroke={paraHighlightActive ? '#FACC15' : '#0F172A'}
+                    strokeWidth={paraHighlightActive ? '4.5' : '2'}
+                  />
+                  {paraHighlightActive && (
+                    <g>
+                      <line x1="274" y1="74" x2="258" y2="96" stroke="#FACC15" strokeWidth="2.5" strokeDasharray="4 3" />
+                      <rect x="242" y="138" width="128" height="30" rx="8" fill="#FACC15" />
+                      <text x="306" y="157" textAnchor="middle" fill="#0F172A" fontSize="12" fontWeight="900">
+                        HÌNH BÌNH HÀNH
+                      </text>
+                    </g>
+                  )}
+                </svg>
+              )}
+
+              {selectedParaExample === 'staircase' && (
+                <svg viewBox="0 0 380 220" className="w-full h-auto block">
+                  <rect x="0" y="0" width="380" height="220" rx="12" fill="#0D0A2A" />
+                  {/* Steps base */}
+                  <path
+                    d="M 28 194 L 92 194 L 92 164 L 154 164 L 154 134 L 216 134 L 216 104 L 278 104 L 278 74 L 352 74 L 352 204 L 28 204 Z"
+                    fill="#1E293B"
+                    stroke="#64748B"
+                    strokeWidth="2.5"
+                  />
+                  {/* Upper & lower slanted handrails */}
+                  <line x1="42" y1="112" x2="328" y2="26" stroke="#94A3B8" strokeWidth="7" strokeLinecap="round" />
+                  <line x1="42" y1="184" x2="328" y2="98" stroke="#64748B" strokeWidth="5" strokeLinecap="round" />
+                  {/* Vertical balusters forming 4 parallelograms */}
+                  {[64, 128, 192, 256, 316].map((x) => {
+                    const yTop = 112 + ((x - 42) / 286) * (26 - 112);
+                    const yBot = 184 + ((x - 42) / 286) * (98 - 184);
+                    return (
+                      <line
+                        key={x}
+                        x1={x}
+                        y1={yTop}
+                        x2={x}
+                        y2={yBot}
+                        stroke="#94A3B8"
+                        strokeWidth="4"
+                      />
+                    );
+                  })}
+
+                  {/* Highlighted central railing panel parallelogram */}
+                  {paraHighlightActive && (
+                    <g>
+                      <polygon
+                        points="128,86 256,48 256,120 128,158"
+                        fill="rgba(56,189,248,0.28)"
+                        stroke="#FACC15"
+                        strokeWidth="4.5"
+                      />
+                      <line x1="128" y1="86" x2="256" y2="48" stroke="#38BDF8" strokeWidth="5" />
+                      <line x1="128" y1="158" x2="256" y2="120" stroke="#38BDF8" strokeWidth="5" />
+                      <line x1="128" y1="86" x2="128" y2="158" stroke="#F472B6" strokeWidth="5" />
+                      <line x1="256" y1="48" x2="256" y2="120" stroke="#F472B6" strokeWidth="5" />
+                      <rect x="234" y="156" width="132" height="30" rx="8" fill="#FACC15" />
+                      <text x="300" y="175" textAnchor="middle" fill="#0F172A" fontSize="12" fontWeight="900">
+                        HÌNH BÌNH HÀNH
+                      </text>
+                    </g>
+                  )}
+                  <text x="190" y="214" textAnchor="middle" fill="#BAE6FD" fontSize="11" fontWeight="800">
+                    Khung lan can có 2 cặp cạnh đối song song và bằng nhau
+                  </text>
+                </svg>
+              )}
+
+              {selectedParaExample === 'awning' && (
+                <svg viewBox="0 0 380 220" className="w-full h-auto block">
+                  <rect x="0" y="0" width="380" height="220" rx="12" fill="#0D0A2A" />
+                  {/* Modern building wall */}
+                  <rect x="34" y="22" width="312" height="172" rx="10" fill="#1E1B4B" stroke="#475569" strokeWidth="2.5" />
+                  {/* Slanted architectural glass panels / awning stripes */}
+                  {[0, 1, 2].map((i) => {
+                    const x0 = 66 + i * 86;
+                    const isMid = i === 1;
+                    return (
+                      <polygon
+                        key={i}
+                        points={`${x0 + 26},46 ${x0 + 96},46 ${x0 + 70},152 ${x0},152`}
+                        fill={
+                          isMid && paraHighlightActive
+                            ? 'rgba(56,189,248,0.38)'
+                            : 'rgba(148,163,184,0.2)'
+                        }
+                        stroke={isMid && paraHighlightActive ? '#FACC15' : '#64748B'}
+                        strokeWidth={isMid && paraHighlightActive ? '4.5' : '2.5'}
+                      />
+                    );
+                  })}
+                  {/* Shine lines on glass */}
+                  <line x1="176" y1="62" x2="164" y2="108" stroke="rgba(255,255,255,0.45)" strokeWidth="3" strokeLinecap="round" />
+                  {paraHighlightActive && (
+                    <g>
+                      <line x1="178" y1="46" x2="248" y2="46" stroke="#38BDF8" strokeWidth="5" />
+                      <line x1="152" y1="152" x2="222" y2="152" stroke="#38BDF8" strokeWidth="5" />
+                      <line x1="178" y1="46" x2="152" y2="152" stroke="#F472B6" strokeWidth="5" />
+                      <line x1="248" y1="46" x2="222" y2="152" stroke="#F472B6" strokeWidth="5" />
+                      <rect x="124" y="162" width="132" height="28" rx="8" fill="#FACC15" />
+                      <text x="190" y="180" textAnchor="middle" fill="#0F172A" fontSize="12" fontWeight="900">
+                        HÌNH BÌNH HÀNH
+                      </text>
+                    </g>
+                  )}
+                  <text x="190" y="212" textAnchor="middle" fill="#BAE6FD" fontSize="11" fontWeight="800">
+                    Ô kính và mái hiên nghiêng tạo thành hình bình hành
+                  </text>
+                </svg>
+              )}
+
+              {selectedParaExample === 'ruler' && (
+                <svg viewBox="0 0 380 220" className="w-full h-auto block">
+                  <rect x="0" y="0" width="380" height="220" rx="12" fill="#0D0A2A" />
+                  {/* Top wooden/blue parallel straightedge */}
+                  <rect x="78" y="42" width="246" height="22" rx="5" fill="#0284C7" stroke="#7DD3FC" strokeWidth="2" />
+                  {/* Bottom parallel straightedge */}
+                  <rect x="46" y="140" width="246" height="22" rx="5" fill="#0284C7" stroke="#7DD3FC" strokeWidth="2" />
+                  {/* Ruler ticks */}
+                  {[0, 1, 2, 3, 4, 5, 6].map((t) => (
+                    <g key={t}>
+                      <line x1={96 + t * 34} y1="42" x2={96 + t * 34} y2="51" stroke="#E0F2FE" strokeWidth="2" />
+                      <line x1={64 + t * 34} y1="153" x2={64 + t * 34} y2="162" stroke="#E0F2FE" strokeWidth="2" />
+                    </g>
+                  ))}
+                  {/* Two slanted equal brass linkage bars */}
+                  <line x1="126" y1="53" x2="94" y2="151" stroke="#F59E0B" strokeWidth="8" strokeLinecap="round" />
+                  <line x1="274" y1="53" x2="242" y2="151" stroke="#F59E0B" strokeWidth="8" strokeLinecap="round" />
+
+                  {/* Parallelogram overlay */}
+                  {paraHighlightActive && (
+                    <g>
+                      <polygon
+                        points="126,53 274,53 242,151 94,151"
+                        fill="rgba(56,189,248,0.22)"
+                        stroke="#FACC15"
+                        strokeWidth="4"
+                        strokeDasharray="7 4"
+                      />
+                      <rect x="124" y="176" width="132" height="28" rx="8" fill="#FACC15" />
+                      <text x="190" y="194" textAnchor="middle" fill="#0F172A" fontSize="12" fontWeight="900">
+                        HÌNH BÌNH HÀNH
+                      </text>
+                    </g>
+                  )}
+
+                  {/* Brass pivot pins */}
+                  {[
+                    { x: 126, y: 53 },
+                    { x: 274, y: 53 },
+                    { x: 242, y: 151 },
+                    { x: 94, y: 151 },
+                  ].map((p, idx) => (
+                    <circle key={idx} cx={p.x} cy={p.y} r="5.5" fill="#FEF08A" stroke="#0F172A" strokeWidth="2" />
+                  ))}
+                </svg>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5 text-xs">
-              {[
-                { icon: '🧩', title: 'Miếng ghép xếp hình', desc: 'Mảnh hình bình hành trong bộ 7 mảnh ghép trí tuệ' },
-                { icon: '🪜', title: 'Bậc lan can cầu thang', desc: 'Các khung nghiêng song song đều nhau trên cầu thang' },
-                { icon: '🏢', title: 'Mái hiên và ô kính nghiêng', desc: 'Các tấm kính kiến trúc cắt vát có 2 cặp cạnh song song' },
-                { icon: '📐', title: 'Thanh thước nối song song', desc: 'Hai thanh gỗ đối diện luôn song song và bằng nhau' },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="bg-indigo-950/80 border border-indigo-400/35 rounded-xl p-2.5 space-y-1"
-                >
-                  <div className="font-extrabold text-white">
-                    {item.icon} {item.title}
-                  </div>
-                  <div className="text-indigo-200 leading-snug">{item.desc}</div>
-                </div>
-              ))}
+            <div className="space-y-1.5">
+              <div className="text-[11px] font-extrabold text-yellow-300 uppercase">
+                👆 Bấm chọn từng đồ vật thực tế để xem hình minh họa:
+              </div>
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                {PARA_EXAMPLES.map((item) => {
+                  const isActive = selectedParaExample === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      data-testid={`para-example-card-${item.id}`}
+                      onClick={() => {
+                        soundFX.playClick(1.12);
+                        setSelectedParaExample(item.id);
+                        setParaHighlightActive(true);
+                      }}
+                      className={`text-left rounded-xl p-2.5 space-y-1 cursor-pointer transition-all border-2 ${
+                        isActive
+                          ? 'bg-sky-500/25 border-yellow-400 shadow-lg scale-[1.02]'
+                          : 'bg-indigo-950/80 border-indigo-400/35 hover:border-sky-400 hover:bg-indigo-900/70'
+                      }`}
+                    >
+                      <div className="font-extrabold text-white flex items-center justify-between gap-1">
+                        <span>
+                          {item.icon} {item.title}
+                        </span>
+                        {isActive && <span className="text-[10px] text-yellow-300">●</span>}
+                      </div>
+                      <div className="text-indigo-200 leading-snug">{item.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -242,13 +505,12 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
                 </defs>
                 <rect x="28" y="16" width="480" height="192" fill="url(#para-explore-grid)" stroke="rgba(148,163,184,0.35)" strokeWidth="1" />
 
-                {/* Parallelogram ABCD: A(156,48) B(412,48) C(348,176) D(92,176) => AB=DC=8 ô, horizontal shift 2 ô, height 4 ô */}
                 <polygon
                   points="156,48 412,48 348,176 92,176"
                   fill="rgba(56,189,248,0.16)"
                 />
 
-                {/* Edge AB & DC */}
+                {/* Edge AB and DC */}
                 <line
                   x1="156"
                   y1="48"
@@ -267,11 +529,10 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
                   strokeWidth={paraHighlightPair === 'ab_dc' || paraHighlightPair === 'all' ? '6' : '3'}
                   strokeLinecap="round"
                 />
-                {/* Equal tick marks on AB and DC */}
                 <line x1="284" y1="40" x2="284" y2="56" stroke="#FACC15" strokeWidth="3" />
                 <line x1="220" y1="168" x2="220" y2="184" stroke="#FACC15" strokeWidth="3" />
 
-                {/* Edge AD & BC */}
+                {/* Edge AD and BC */}
                 <line
                   x1="156"
                   y1="48"
@@ -290,7 +551,6 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
                   strokeWidth={paraHighlightPair === 'ad_bc' || paraHighlightPair === 'all' ? '6' : '3'}
                   strokeLinecap="round"
                 />
-                {/* Double equal tick marks on AD and BC */}
                 <line x1="117" y1="108" x2="131" y2="115" stroke="#FACC15" strokeWidth="3" />
                 <line x1="113" y1="116" x2="127" y2="123" stroke="#FACC15" strokeWidth="3" />
                 <line x1="373" y1="108" x2="387" y2="115" stroke="#FACC15" strokeWidth="3" />
@@ -346,79 +606,218 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
       {/* TAB 2: HÌNH THOI */}
       {activeTab === 'rhombus' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          {/* Left: Magnetic Compass & Real-World Cards */}
+          {/* Left: Interactive Real-World Rhombus Showcase */}
           <div className="lg:col-span-5 card-3d-cosmic rounded-3xl p-5 border-2 border-fuchsia-400/60 space-y-4">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-base sm:text-lg font-extrabold text-fuchsia-300">
-                🧭 Chiếc kim nam châm của la bàn
+              <h3
+                data-testid="rhombus-example-heading"
+                className="text-base sm:text-lg font-extrabold text-fuchsia-300"
+              >
+                {activeRhombusMeta.icon} {activeRhombusMeta.heading}
               </h3>
               <button
                 type="button"
                 onClick={() => {
                   soundFX.playSnap();
-                  setCompassNeedleHighlighted((v) => !v);
+                  setRhombusHighlightActive((v) => !v);
                 }}
-                className="px-3 py-1 rounded-lg bg-fuchsia-500/20 border border-fuchsia-400/60 text-fuchsia-200 text-xs font-extrabold cursor-pointer hover:bg-fuchsia-500/35"
+                className="px-3 py-1 rounded-lg bg-fuchsia-500/20 border border-fuchsia-400/60 text-fuchsia-200 text-xs font-extrabold cursor-pointer hover:bg-fuchsia-500/35 shrink-0"
               >
-                {compassNeedleHighlighted ? '✨ Đang soi kim hình thoi' : 'Bấm soi kim la bàn'}
+                {rhombusHighlightActive ? '✨ Đang soi hình thoi' : 'Bấm soi hình thoi'}
               </button>
             </div>
 
             <div className="bg-[#0B0826] rounded-2xl p-3 border border-indigo-400/40">
-              <svg viewBox="0 0 380 220" className="w-full h-auto block">
-                <rect x="0" y="0" width="380" height="220" rx="12" fill="#0D0A2A" />
-                {/* Compass outer ring */}
-                <circle cx="130" cy="110" r="82" fill="#F8FAFC" stroke="#94A3B8" strokeWidth="8" />
-                <circle cx="130" cy="110" r="72" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="2" />
-                <text x="130" y="54" textAnchor="middle" fill="#0F172A" fontSize="15" fontWeight="900">N</text>
-                <text x="130" y="175" textAnchor="middle" fill="#0F172A" fontSize="15" fontWeight="900">S</text>
-                <text x="72" y="115" textAnchor="middle" fill="#0F172A" fontSize="14" fontWeight="900">W</text>
-                <text x="188" y="115" textAnchor="middle" fill="#0F172A" fontSize="14" fontWeight="900">E</text>
+              {selectedRhombusExample === 'compass' && (
+                <svg viewBox="0 0 380 220" className="w-full h-auto block">
+                  <rect x="0" y="0" width="380" height="220" rx="12" fill="#0D0A2A" />
+                  <circle cx="130" cy="110" r="82" fill="#F8FAFC" stroke="#94A3B8" strokeWidth="8" />
+                  <circle cx="130" cy="110" r="72" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="2" />
+                  <text x="130" y="54" textAnchor="middle" fill="#0F172A" fontSize="15" fontWeight="900">N</text>
+                  <text x="130" y="175" textAnchor="middle" fill="#0F172A" fontSize="15" fontWeight="900">S</text>
+                  <text x="72" y="115" textAnchor="middle" fill="#0F172A" fontSize="14" fontWeight="900">W</text>
+                  <text x="188" y="115" textAnchor="middle" fill="#0F172A" fontSize="14" fontWeight="900">E</text>
 
-                {/* Rhombus magnetic needle tilted slightly */}
-                <g transform="rotate(-18 130 110)">
-                  <polygon points="130,40 144,110 130,110 116,110" fill="#2563EB" />
-                  <polygon points="130,180 144,110 130,110 116,110" fill="#EF4444" />
-                  <polygon
-                    points="130,40 144,110 130,180 116,110"
+                  <g transform="rotate(-18 130 110)">
+                    <polygon points="130,40 144,110 130,110 116,110" fill="#2563EB" />
+                    <polygon points="130,180 144,110 130,110 116,110" fill="#EF4444" />
+                    <polygon
+                      points="130,40 144,110 130,180 116,110"
+                      fill="none"
+                      stroke={rhombusHighlightActive ? '#22C55E' : '#0F172A'}
+                      strokeWidth={rhombusHighlightActive ? '4' : '1.5'}
+                    />
+                    <circle cx="130" cy="110" r="4.5" fill="#FACC15" stroke="#0F172A" strokeWidth="1.5" />
+                  </g>
+
+                  <rect x="224" y="58" width="144" height="104" rx="14" fill="#1E1B4B" stroke="#E879F9" strokeWidth="2" />
+                  <text x="296" y="88" textAnchor="middle" fill="#F0ABFC" fontSize="13" fontWeight="900">
+                    Kim nam châm
+                  </text>
+                  <text x="296" y="110" textAnchor="middle" fill="#FFFFFF" fontSize="12" fontWeight="700">
+                    có 4 cạnh bằng nhau
+                  </text>
+                  <text x="296" y="132" textAnchor="middle" fill="#FACC15" fontSize="14" fontWeight="900">
+                    → Dạng HÌNH THOI
+                  </text>
+                </svg>
+              )}
+
+              {selectedRhombusExample === 'kite' && (
+                <svg viewBox="0 0 380 220" className="w-full h-auto block">
+                  <rect x="0" y="0" width="380" height="220" rx="12" fill="#0D0A2A" />
+                  {/* Clouds / sky accents */}
+                  <circle cx="58" cy="48" r="18" fill="rgba(56,189,248,0.16)" />
+                  <circle cx="76" cy="48" r="22" fill="rgba(56,189,248,0.16)" />
+                  <circle cx="318" cy="44" r="16" fill="rgba(232,121,249,0.15)" />
+
+                  {/* Flowing kite tail */}
+                  <path
+                    d="M 150 162 Q 190 184 226 172 T 294 196"
                     fill="none"
-                    stroke={compassNeedleHighlighted ? '#22C55E' : '#0F172A'}
-                    strokeWidth={compassNeedleHighlighted ? '4' : '1.5'}
+                    stroke="#FACC15"
+                    strokeWidth="3"
+                    strokeDasharray="6 4"
                   />
-                  <circle cx="130" cy="110" r="4.5" fill="#FACC15" stroke="#0F172A" strokeWidth="1.5" />
-                </g>
+                  {/* Ribbon bows on tail */}
+                  <polygon points="210,174 220,166 220,182" fill="#F43F5E" />
+                  <polygon points="228,174 218,166 218,182" fill="#F43F5E" />
+                  <polygon points="262,182 272,174 272,190" fill="#38BDF8" />
+                  <polygon points="280,182 270,174 270,190" fill="#38BDF8" />
 
-                {/* Callout */}
-                <rect x="224" y="58" width="144" height="104" rx="14" fill="#1E1B4B" stroke="#E879F9" strokeWidth="2" />
-                <text x="296" y="88" textAnchor="middle" fill="#F0ABFC" fontSize="13" fontWeight="900">
-                  Kim nam châm
-                </text>
-                <text x="296" y="110" textAnchor="middle" fill="#FFFFFF" fontSize="12" fontWeight="700">
-                  có 4 cạnh bằng nhau
-                </text>
-                <text x="296" y="132" textAnchor="middle" fill="#FACC15" fontSize="14" fontWeight="900">
-                  → Dạng HÌNH THOI
-                </text>
-              </svg>
+                  {/* Rhombus kite 4 colorful quarters */}
+                  <polygon points="150,28 216,95 150,95" fill="#F43F5E" />
+                  <polygon points="150,28 84,95 150,95" fill="#FACC15" />
+                  <polygon points="150,162 216,95 150,95" fill="#38BDF8" />
+                  <polygon points="150,162 84,95 150,95" fill="#10B981" />
+
+                  {/* Wooden cross spars */}
+                  <line x1="150" y1="28" x2="150" y2="162" stroke="#FEF08A" strokeWidth="2.5" />
+                  <line x1="84" y1="95" x2="216" y2="95" stroke="#FEF08A" strokeWidth="2.5" />
+
+                  {/* Outer rhombus highlight */}
+                  <polygon
+                    points="150,28 216,95 150,162 84,95"
+                    fill="none"
+                    stroke={rhombusHighlightActive ? '#E879F9' : '#0F172A'}
+                    strokeWidth={rhombusHighlightActive ? '5' : '2'}
+                  />
+
+                  {/* Callout */}
+                  <rect x="236" y="54" width="132" height="92" rx="14" fill="#1E1B4B" stroke="#E879F9" strokeWidth="2" />
+                  <text x="302" y="82" textAnchor="middle" fill="#F0ABFC" fontSize="13" fontWeight="900">
+                    Con diều cân đối
+                  </text>
+                  <text x="302" y="104" textAnchor="middle" fill="#FFFFFF" fontSize="11.5" fontWeight="700">
+                    4 cạnh viền bằng nhau
+                  </text>
+                  <text x="302" y="128" textAnchor="middle" fill="#FACC15" fontSize="13.5" fontWeight="900">
+                    → HÌNH THOI
+                  </text>
+                </svg>
+              )}
+
+              {selectedRhombusExample === 'lattice' && (
+                <svg viewBox="0 0 380 220" className="w-full h-auto block">
+                  <rect x="0" y="0" width="380" height="220" rx="12" fill="#0D0A2A" />
+                  <rect x="34" y="20" width="312" height="162" rx="8" fill="#1E293B" stroke="#94A3B8" strokeWidth="5" />
+                  {[0, 1, 2, 3].map((col) =>
+                    [0, 1].map((row) => {
+                      const cx = 86 + col * 68;
+                      const cy = 65 + row * 72;
+                      const isFeatured = col === 1 && row === 0;
+                      return (
+                        <polygon
+                          key={`${col}-${row}`}
+                          points={`${cx},${cy - 32} ${cx + 30},${cy} ${cx},${cy + 32} ${cx - 30},${cy}`}
+                          fill={
+                            isFeatured && rhombusHighlightActive
+                              ? 'rgba(232,121,249,0.34)'
+                              : 'rgba(56,189,248,0.08)'
+                          }
+                          stroke={
+                            isFeatured && rhombusHighlightActive ? '#FACC15' : '#38BDF8'
+                          }
+                          strokeWidth={isFeatured && rhombusHighlightActive ? '4.5' : '2.5'}
+                        />
+                      );
+                    })
+                  )}
+                  <text x="190" y="205" textAnchor="middle" fill="#F5D0FE" fontSize="11" fontWeight="800">
+                    Mỗi ô lưới mắt cáo có 4 cạnh bằng nhau dạng HÌNH THOI
+                  </text>
+                </svg>
+              )}
+
+              {selectedRhombusExample === 'sign' && (
+                <svg viewBox="0 0 380 220" className="w-full h-auto block">
+                  <rect x="0" y="0" width="380" height="220" rx="12" fill="#0D0A2A" />
+                  {/* Steel post */}
+                  <rect x="130" y="146" width="12" height="62" fill="#94A3B8" />
+                  {/* Yellow diamond traffic sign */}
+                  <polygon
+                    points="136,24 202,90 136,156 70,90"
+                    fill="#FACC15"
+                    stroke={rhombusHighlightActive ? '#E879F9' : '#0F172A'}
+                    strokeWidth={rhombusHighlightActive ? '5.5' : '4'}
+                  />
+                  <polygon points="136,36 190,90 136,144 82,90" fill="none" stroke="#0F172A" strokeWidth="2.5" />
+                  <text x="136" y="102" textAnchor="middle" fill="#0F172A" fontSize="34" fontWeight="900">
+                    !
+                  </text>
+
+                  {/* Callout */}
+                  <rect x="224" y="54" width="144" height="100" rx="14" fill="#1E1B4B" stroke="#FACC15" strokeWidth="2" />
+                  <text x="296" y="82" textAnchor="middle" fill="#FDE047" fontSize="13" fontWeight="900">
+                    Biển báo dựng đứng
+                  </text>
+                  <text x="296" y="104" textAnchor="middle" fill="#FFFFFF" fontSize="11.5" fontWeight="700">
+                    4 cạnh viền bằng nhau
+                  </text>
+                  <text x="296" y="124" textAnchor="middle" fill="#FFFFFF" fontSize="11.5" fontWeight="700">
+                    2 cặp cạnh song song
+                  </text>
+                  <text x="296" y="144" textAnchor="middle" fill="#F0ABFC" fontSize="13" fontWeight="900">
+                    → Dạng HÌNH THOI
+                  </text>
+                </svg>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5 text-xs">
-              {[
-                { icon: '🧭', title: 'Kim nam châm la bàn', desc: '4 cạnh thon đều bằng nhau giúp chỉ hướng Bắc – Nam' },
-                { icon: '🪁', title: 'Con diều hình thoi', desc: 'Khung con diều có 4 cạnh viền bằng nhau cân đối' },
-                { icon: '🔲', title: 'Ô lưới sắt mắt cáo', desc: 'Các ô lưới trên cánh cổng xếp đều có dạng hình thoi' },
-                { icon: '⚠️', title: 'Biển báo giao thông', desc: 'Biển báo đặt dựng theo hình viên kim cương 4 cạnh bằng nhau' },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="bg-indigo-950/80 border border-fuchsia-400/35 rounded-xl p-2.5 space-y-1"
-                >
-                  <div className="font-extrabold text-white">
-                    {item.icon} {item.title}
-                  </div>
-                  <div className="text-indigo-200 leading-snug">{item.desc}</div>
-                </div>
-              ))}
+            <div className="space-y-1.5">
+              <div className="text-[11px] font-extrabold text-yellow-300 uppercase">
+                👆 Bấm chọn từng đồ vật thực tế để xem hình minh họa:
+              </div>
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                {RHOMBUS_EXAMPLES.map((item) => {
+                  const isActive = selectedRhombusExample === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      data-testid={`rhombus-example-card-${item.id}`}
+                      onClick={() => {
+                        soundFX.playClick(1.15);
+                        setSelectedRhombusExample(item.id);
+                        setRhombusHighlightActive(true);
+                      }}
+                      className={`text-left rounded-xl p-2.5 space-y-1 cursor-pointer transition-all border-2 ${
+                        isActive
+                          ? 'bg-fuchsia-500/25 border-yellow-400 shadow-lg scale-[1.02]'
+                          : 'bg-indigo-950/80 border-fuchsia-400/35 hover:border-fuchsia-400 hover:bg-indigo-900/70'
+                      }`}
+                    >
+                      <div className="font-extrabold text-white flex items-center justify-between gap-1">
+                        <span>
+                          {item.icon} {item.title}
+                        </span>
+                        {isActive && <span className="text-[10px] text-yellow-300">●</span>}
+                      </div>
+                      <div className="text-indigo-200 leading-snug">{item.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -462,13 +861,12 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
                 </defs>
                 <rect x="28" y="16" width="480" height="192" fill="url(#rhombus-explore-grid)" stroke="rgba(148,163,184,0.35)" strokeWidth="1" />
 
-                {/* Rhombus ABCD matching textbook: A(92,112) B(268,32) C(444,112) D(268,192) */}
                 <polygon
                   points="92,112 268,32 444,112 268,192"
                   fill="rgba(232,121,249,0.16)"
                 />
 
-                {/* AB & DC */}
+                {/* AB and DC */}
                 <line
                   x1="92"
                   y1="112"
@@ -488,7 +886,7 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
                   strokeLinecap="round"
                 />
 
-                {/* AD & BC */}
+                {/* AD and BC */}
                 <line
                   x1="92"
                   y1="112"
@@ -508,7 +906,7 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
                   strokeLinecap="round"
                 />
 
-                {/* Single equal tick marks on all 4 sides */}
+                {/* Equal tick marks */}
                 <line x1="175" y1="64" x2="185" y2="80" stroke="#FACC15" strokeWidth="3.2" />
                 <line x1="351" y1="144" x2="361" y2="160" stroke="#FACC15" strokeWidth="3.2" />
                 <line x1="175" y1="160" x2="185" y2="144" stroke="#FACC15" strokeWidth="3.2" />
@@ -601,7 +999,6 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
               </div>
             </div>
 
-            {/* Quick Interactive Mini-Check */}
             <div className="bg-indigo-950/90 border border-indigo-400/40 rounded-2xl p-4 space-y-2.5">
               <div className="text-xs sm:text-sm font-extrabold text-white">
                 🎯 Câu hỏi nhanh: Hình nào luôn có cả 4 cạnh bằng nhau?
@@ -649,7 +1046,6 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
       {/* TAB 4: CÔNG THỨC CHU VI LỚP 4 */}
       {activeTab === 'perimeter' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* Parallelogram Perimeter Interactive Card */}
           <div className="card-3d-cosmic rounded-3xl p-5 border-2 border-sky-400/60 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-extrabold text-sky-300">
@@ -707,7 +1103,6 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
             </div>
           </div>
 
-          {/* Rhombus Perimeter Interactive Card */}
           <div className="card-3d-cosmic rounded-3xl p-5 border-2 border-fuchsia-400/60 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-extrabold text-fuchsia-300">
@@ -751,7 +1146,6 @@ export const ShapesExploreView: React.FC<ShapesExploreViewProps> = ({
             </div>
           </div>
 
-          {/* Shared Grade 4 Unit Reminder */}
           <div className="lg:col-span-2 bg-amber-500/15 border-2 border-yellow-400/60 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="text-xs sm:text-sm text-yellow-100 font-semibold">
               ⚠️ <span className="font-extrabold text-yellow-300">Lưu ý quan trọng Toán Lớp 4:</span> Khi tính chu vi hình bình hành, nếu hai cạnh khác đơn vị đo (ví dụ <span className="font-bold text-white">dm</span> và <span className="font-bold text-white">cm</span>), em nhớ <span className="font-bold text-white">đổi về cùng một đơn vị đo</span> trước khi cộng rồi nhân 2 nhé!

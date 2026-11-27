@@ -310,7 +310,7 @@ export const PARALLEL_CHECK_SHAPES: ParallelCheckShapeTask[] = [
     referenceEdgeNameVi: 'AD',
     expectedParallelEdgeIds: ['MN', 'PQ', 'BC'],
     readingSummaryVi:
-      'Cạnh AD song song với tận 3 cạnh khác trong hình là: cạnh MN, cạnh PQ và cạnh BC!',
+      'Cạnh AD song song với 3 cạnh: cạnh MN, cạnh PQ và cạnh BC',
     edges: [
       { id: 'AD', labelVi: 'Cạnh AD', p1: { x: 135, y: 95 }, p2: { x: 135, y: 285 }, labelPos: { x: 96, y: 194 }, isReference: true, isParallelToReference: false },
       { id: 'MN', labelVi: 'Cạnh MN', p1: { x: 280, y: 95 }, p2: { x: 280, y: 285 }, labelPos: { x: 252, y: 194 }, isParallelToReference: true },

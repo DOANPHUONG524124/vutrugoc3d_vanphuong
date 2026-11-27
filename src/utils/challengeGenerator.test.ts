@@ -49,9 +49,9 @@ test('calculateStarReward awards 0..3 stars accurately', () => {
   assert.equal(calculateStarReward(4, 15), 0);
 });
 
-test('computeOverallProgressPercent tracks completed sections', () => {
+test('computeOverallProgressPercent tracks completed sections across all 4 topics', () => {
   assert.equal(computeOverallProgressPercent(INITIAL_PROGRESS), 0);
-  const full = {
+  const topic1Only = {
     ...INITIAL_PROGRESS,
     completedSections: {
       explore: true,
@@ -63,7 +63,15 @@ test('computeOverallProgressPercent tracks completed sections', () => {
       level3: true,
     },
   };
-  assert.equal(computeOverallProgressPercent(full), 100);
+  assert.equal(computeOverallProgressPercent(topic1Only), 25);
+
+  const allFourTopics = {
+    ...topic1Only,
+    perpendicularSections: { explore: true, lab: true, challenge: true, guide: true },
+    parallelSections: { explore: true, lab: true, challenge: true, guide: true },
+    shapesSections: { explore: true, lab: true, challenge: true, guide: true },
+  };
+  assert.equal(computeOverallProgressPercent(allFourTopics), 100);
 });
 
 test('Level 1 questions match updated prompts and visualSpec flags', () => {

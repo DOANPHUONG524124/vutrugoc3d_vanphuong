@@ -1,9 +1,4 @@
 import React, { useState } from 'react';
-import {
-  BADGE_CATALOG,
-  computeOverallProgressPercent,
-  PlayerProgress,
-} from '../utils/challengeGenerator';
 import { soundFX } from '../utils/soundEffects';
 import {
   TextbookAngleMeasurePlacementSVG,
@@ -11,29 +6,27 @@ import {
 } from './TextbookAngleIllustrations';
 
 interface KnowledgeLibraryViewProps {
-  progress: PlayerProgress;
   onMarkLibraryRead: () => void;
   onOpenTutorial: () => void;
   onOpenLab: () => void;
+  onOpenJourney: () => void;
   onBackHome: () => void;
 }
 
 export const KnowledgeLibraryView: React.FC<KnowledgeLibraryViewProps> = ({
-  progress,
   onMarkLibraryRead,
   onOpenTutorial,
   onOpenLab,
+  onOpenJourney,
   onBackHome,
 }) => {
-  const [activeTab, setActiveTab] = useState<'knowledge' | 'mistakes' | 'rewards'>('knowledge');
+  const [activeTab, setActiveTab] = useState<'knowledge' | 'mistakes'>('knowledge');
 
-  const handleTabSwitch = (tab: 'knowledge' | 'mistakes' | 'rewards') => {
+  const handleTabSwitch = (tab: 'knowledge' | 'mistakes') => {
     soundFX.playClick();
     setActiveTab(tab);
     onMarkLibraryRead();
   };
-
-  const overallPercent = computeOverallProgressPercent(progress);
 
   return (
     <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col gap-5">
@@ -41,26 +34,38 @@ export const KnowledgeLibraryView: React.FC<KnowledgeLibraryViewProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3 card-3d-cosmic rounded-2xl px-5 py-3.5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-            THƯ VIỆN KIẾN THỨC VÀ BẢNG THÀNH TÍCH
+            4. CẨM NANG KIẾN THỨC · GÓC VÀ ĐO GÓC
           </h1>
           <p className="text-xs sm:text-sm text-indigo-200">
-            Cẩm nang đơn vị đo góc, cấu tạo thước đo góc, các lỗi thường gặp và Huy hiệu Vũ trụ
+            Cẩm nang đơn vị đo góc, cấu tạo thước đo góc và các lỗi thường gặp khi đo góc
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            soundFX.playClick();
-            onBackHome();
-          }}
-          className="btn-3d-cobalt px-4 py-2.5 rounded-xl font-bold text-sm text-white cursor-pointer"
-        >
-          ← Quay lại Trang chủ
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              soundFX.playClick();
+              onOpenJourney();
+            }}
+            className="btn-3d-gold px-3.5 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm text-slate-950 cursor-pointer"
+          >
+            🚀 Hành Trình Vũ Trụ
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              soundFX.playClick();
+              onBackHome();
+            }}
+            className="btn-3d-cobalt px-4 py-2.5 rounded-xl font-bold text-sm text-white cursor-pointer"
+          >
+            ← Quay lại Trang chủ
+          </button>
+        </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <button
           type="button"
           onClick={() => handleTabSwitch('knowledge')}
@@ -82,17 +87,6 @@ export const KnowledgeLibraryView: React.FC<KnowledgeLibraryViewProps> = ({
           }`}
         >
           ⚠️ 2. Lỗi Thường Gặp (Đúng/Sai)
-        </button>
-        <button
-          type="button"
-          onClick={() => handleTabSwitch('rewards')}
-          className={`py-3 px-4 rounded-xl font-extrabold text-xs sm:text-sm cursor-pointer border-2 ${
-            activeTab === 'rewards'
-              ? 'bg-emerald-500 text-white border-white shadow-lg'
-              : 'bg-[#140F38] text-indigo-200 border-indigo-500/40 hover:border-indigo-400'
-          }`}
-        >
-          🏆 3. Huy Hiệu Và Tiến Độ ({overallPercent}%)
         </button>
       </div>
 
@@ -322,86 +316,6 @@ export const KnowledgeLibraryView: React.FC<KnowledgeLibraryViewProps> = ({
         </div>
       )}
 
-      {/* TAB 3: REWARDS, BADGES & LEARNING PROGRESS */}
-      {activeTab === 'rewards' && (
-        <div className="flex flex-col gap-5">
-          {/* Progress Bar Card */}
-          <div className="card-3d-cosmic rounded-2xl p-5 flex flex-col gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 className="text-xl font-extrabold text-white">
-                  TIẾN ĐỘ CHINH PHỤC VŨ TRỤ HÌNH HỌC LỚP 4
-                </h2>
-                <p className="text-xs text-indigo-200">
-                  Dữ liệu điểm thưởng và huy hiệu được lưu tự động trên trình duyệt của em
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <div className="text-xs text-indigo-300 font-bold">TỔNG SAO THƯỞNG</div>
-                  <div className="text-2xl font-extrabold font-mono-num text-yellow-300">
-                    ★ {progress.stars}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-indigo-300 font-bold">HOÀN THÀNH</div>
-                  <div className="text-2xl font-extrabold font-mono-num text-emerald-400">
-                    {overallPercent}%
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="w-full h-4 rounded-full bg-slate-900 overflow-hidden border border-indigo-500/40">
-              <div
-                className="h-full bg-gradient-to-r from-yellow-400 via-pink-500 to-emerald-400 transition-all duration-300"
-                style={{ width: `${Math.max(6, overallPercent)}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Badges Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {BADGE_CATALOG.map((badge) => {
-              const isUnlocked = badge.unlocked(progress);
-              return (
-                <div
-                  key={badge.id}
-                  className={`card-3d-cosmic rounded-2xl p-4 flex items-center gap-4 border-2 ${
-                    isUnlocked ? 'border-yellow-400' : 'border-slate-700/60 opacity-75'
-                  }`}
-                >
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 text-2xl font-extrabold border-2"
-                    style={{
-                      backgroundColor: isUnlocked ? 'rgba(250, 204, 21, 0.2)' : '#0F172A',
-                      borderColor: isUnlocked ? badge.color : '#334155',
-                      color: isUnlocked ? badge.color : '#64748B',
-                    }}
-                  >
-                    {isUnlocked ? '🏅' : '🔒'}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-extrabold text-sm sm:text-base text-white">
-                        {badge.titleVi}
-                      </h3>
-                    </div>
-                    <p className="text-xs text-indigo-200 mt-0.5">{badge.descVi}</p>
-                    <div
-                      className={`text-[11px] font-bold mt-1 ${
-                        isUnlocked ? 'text-emerald-400' : 'text-amber-300'
-                      }`}
-                    >
-                      {isUnlocked ? '✓ Đã nhận huy hiệu' : 'Chưa mở khóa'}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

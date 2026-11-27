@@ -165,7 +165,7 @@ const READING_DATA: Record<ReadingShapeId, { title: string; badge: string; group
           { id: 'PQ', label: 'Cạnh PQ' },
           { id: 'BC', label: 'Cạnh BC' },
         ],
-        sentenceVi: 'Cạnh AD song song với tận 3 cạnh: cạnh MN, cạnh PQ và cạnh BC!',
+        sentenceVi: 'Cạnh AD song song với 3 cạnh: cạnh MN, cạnh PQ và cạnh BC',
         tipVi: 'Trong thực tế như khung cửa sổ hay thang gỗ, một cạnh thường song song với rất nhiều cạnh khác!',
       },
       {

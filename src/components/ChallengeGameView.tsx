@@ -12,10 +12,12 @@ import {
   ChallengeQuestion,
   generateChallengeQuestions,
 } from '../utils/challengeGenerator';
+import { computeQuizSeed, shuffleQuizQuestions } from '../utils/quizShuffle';
 import { soundFX } from '../utils/soundEffects';
 import { SemicircleProtractorSVG } from './SemicircleProtractorSVG';
 
 interface ChallengeGameViewProps {
+  quizSeed?: number;
   onFinishChallengeLevel: (level: ChallengeLevel, score: number, starsEarned: number) => void;
   onAngleChangeFor3D: (deg: number) => void;
   onBackHome: () => void;
@@ -33,6 +35,7 @@ const CATEGORY_FILTERS: Array<{
 ];
 
 export const ChallengeGameView: React.FC<ChallengeGameViewProps> = ({
+  quizSeed = 1,
   onFinishChallengeLevel,
   onAngleChangeFor3D,
   onBackHome,
@@ -42,9 +45,13 @@ export const ChallengeGameView: React.FC<ChallengeGameViewProps> = ({
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [useTimer, setUseTimer] = useState<boolean>(false);
   const [secondsLeft, setSecondsLeft] = useState<number>(240);
+  const [attemptNonce, setAttemptNonce] = useState<number>(0);
 
   const [questions, setQuestions] = useState<ChallengeQuestion[]>(() =>
-    generateChallengeQuestions(1, 'all')
+    shuffleQuizQuestions(
+      generateChallengeQuestions(1, 'all'),
+      computeQuizSeed(quizSeed, 1, 0, 101)
+    )
   );
   const [currentIdx, setCurrentIdx] = useState<number>(0);
   const [score, setScore] = useState<number>(0);
@@ -99,7 +106,12 @@ export const ChallengeGameView: React.FC<ChallengeGameViewProps> = ({
     cat: ChallengeExerciseCategory = categoryFilter
   ) => {
     soundFX.playClick(1.15);
-    const qList = generateChallengeQuestions(lvl, cat);
+    const nextAttempt = attemptNonce + 1;
+    setAttemptNonce(nextAttempt);
+    const qList = shuffleQuizQuestions(
+      generateChallengeQuestions(lvl, cat),
+      computeQuizSeed(quizSeed, lvl, nextAttempt, 101)
+    );
     setSelectedLevel(lvl);
     setCategoryFilter(cat);
     setQuestions(qList);
@@ -122,7 +134,7 @@ export const ChallengeGameView: React.FC<ChallengeGameViewProps> = ({
       (currentQuestion.alsoAcceptOptionIndex !== undefined &&
         optionIndex === currentQuestion.alsoAcceptOptionIndex);
     if (currentQuestion.fillBlanksSpec) {
-      if (optionIndex === 0) {
+      if (isCorrect) {
         setFillBlanksInput({
           angleType: currentQuestion.fillBlanksSpec.angleTypeAnswer,
           vertex: currentQuestion.fillBlanksSpec.vertexAnswer,
@@ -163,7 +175,10 @@ export const ChallengeGameView: React.FC<ChallengeGameViewProps> = ({
     } else {
       soundFX.playWrong();
     }
-    setAnsweredState({ isCorrect, selectedIdx: isCorrect ? 0 : -1 });
+    setAnsweredState({
+      isCorrect,
+      selectedIdx: isCorrect ? (currentQuestion.correctOptionIndex ?? 0) : -1,
+    });
   };
 
   const handleSubmitLevel3Measurement = () => {
