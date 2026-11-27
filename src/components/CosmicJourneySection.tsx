@@ -13,6 +13,7 @@ interface CosmicJourneySectionProps {
   onChangeStudentInfo: (name: string, className: string) => void;
   onOpenCertificateModal: (target: JourneyTopicId | 'all') => void;
   onResetTopic: (topicId: JourneyTopicId) => void;
+  onClose?: () => void;
 }
 
 export const CosmicJourneySection: React.FC<CosmicJourneySectionProps> = ({
@@ -21,6 +22,7 @@ export const CosmicJourneySection: React.FC<CosmicJourneySectionProps> = ({
   onChangeStudentInfo,
   onOpenCertificateModal,
   onResetTopic,
+  onClose,
 }) => {
   const [showBadges, setShowBadges] = useState(true);
   const [confirmResetTopicId, setConfirmResetTopicId] = useState<JourneyTopicId | null>(null);
@@ -32,11 +34,27 @@ export const CosmicJourneySection: React.FC<CosmicJourneySectionProps> = ({
     <section
       id="cosmic-journey-section"
       data-testid="cosmic-journey-section"
-      className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4 pb-8 space-y-5"
+      className="max-w-6xl w-full mx-auto space-y-5"
     >
       {/* Main Journey Header & Overall Progress Banner */}
-      <div className="card-3d-cosmic rounded-3xl p-5 sm:p-6 border-2 border-yellow-400/70 space-y-5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="card-3d-cosmic rounded-3xl p-5 sm:p-6 border-2 border-yellow-400/75 space-y-5 relative">
+        {onClose && (
+          <button
+            type="button"
+            data-testid="btn-close-cosmic-journey"
+            onClick={() => {
+              soundFX.playClick();
+              onClose();
+            }}
+            aria-label="Đóng Hành Trình Chinh Phục Vũ Trụ"
+            className="absolute top-4 right-4 px-3 py-1.5 rounded-xl bg-indigo-950/95 hover:bg-rose-500/25 border border-indigo-400/50 hover:border-rose-400 text-indigo-100 hover:text-white text-xs font-extrabold cursor-pointer flex items-center gap-1.5 z-10"
+          >
+            <span>✕</span>
+            <span>Đóng</span>
+          </button>
+        )}
+
+        <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${onClose ? 'pr-20 sm:pr-24' : ''}`}>
           <div className="space-y-1">
             <div className="inline-flex items-center gap-2 text-xs font-extrabold tracking-wider text-yellow-300 uppercase">
               <span>🚀</span>

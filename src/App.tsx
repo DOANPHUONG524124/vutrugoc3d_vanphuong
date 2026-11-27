@@ -3,6 +3,7 @@ import { ChallengeGameView } from './components/ChallengeGameView';
 import { CosmicJourneySection } from './components/CosmicJourneySection';
 import { ExploreAnglesView } from './components/ExploreAnglesView';
 import { KnowledgeLibraryView } from './components/KnowledgeLibraryView';
+import { MathTutorWidget } from './components/MathTutorWidget';
 import { ParallelChallengeView } from './components/ParallelChallengeView';
 import { ParallelExploreView } from './components/ParallelExploreView';
 import { ParallelGuideView } from './components/ParallelGuideView';
@@ -74,6 +75,7 @@ export default function App() {
   const [activeAngleDeg, setActiveAngleDeg] = useState<number>(60);
   const [isMuted, setIsMuted] = useState<boolean>(() => soundFX.isMuted());
   const [rewardModalTarget, setRewardModalTarget] = useState<JourneyTopicId | 'all' | null>(null);
+  const [isJourneyOpen, setIsJourneyOpen] = useState<boolean>(false);
 
   const [progress, setProgress] = useState<PlayerProgress>(() => {
     try {
@@ -243,15 +245,20 @@ export default function App() {
     }, 60);
   };
 
+  useEffect(() => {
+    if (!isJourneyOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsJourneyOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isJourneyOpen]);
+
   const scrollToCosmicJourney = () => {
     soundFX.playClick();
-    setActiveScreen('home');
-    setTimeout(() => {
-      const el = document.getElementById('cosmic-journey-section');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 80);
+    setIsJourneyOpen((prev) => !prev);
   };
 
   const handleChangeStudentInfo = (name: string, className: string) => {
@@ -605,12 +612,12 @@ export default function App() {
       />
 
       {/* Top Perimeter Status Strip (World-Matched Cosmic HUD) */}
-      <div className="relative z-20 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-3 flex items-start justify-between gap-3 pointer-events-none">
+      <div className="relative z-20 max-w-[1440px] w-full mx-auto px-4 sm:px-6 xl:px-8 pt-3 flex items-start justify-between lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-start gap-3 pointer-events-none">
         {/* Left: Brand Emblem Lockup */}
         <button
           type="button"
           onClick={() => navigateTo('home')}
-          className="pointer-events-auto flex items-center gap-3 bg-[#130E38]/95 border-2 border-indigo-400/50 rounded-2xl px-3 py-1.5 shadow-lg cursor-pointer hover:border-yellow-400 transition-colors"
+          className="pointer-events-auto justify-self-start flex items-center gap-3 bg-[#130E38]/95 border-2 border-indigo-400/50 rounded-2xl px-3 py-1.5 shadow-lg cursor-pointer hover:border-yellow-400 transition-colors"
         >
           <img
             src="/assets/aistudio/ava_04065f25.png"
@@ -624,14 +631,36 @@ export default function App() {
           </div>
         </button>
 
-        {/* Right: Stars, Progress, Audio Mute Toggle & Authors/School */}
-        <div className="pointer-events-auto flex flex-col items-end gap-1.5">
+        {/* Center (Desktop Home): School Crest Logo & Yellow School Name */}
+        <div className="hidden lg:flex justify-self-center items-center justify-center">
+          {activeScreen === 'home' && (
+            <div
+              data-testid="home-school-header"
+              className="pointer-events-auto inline-flex items-center gap-3 bg-[#130E38]/90 border-2 border-yellow-400/65 rounded-2xl px-4 py-1.5 shadow-[0_0_22px_rgba(250,204,21,0.22)]"
+            >
+              <div className="w-11 h-11 rounded-full bg-white border-2 border-yellow-400 overflow-hidden shadow-md shrink-0 flex items-center justify-center">
+                <img
+                  src="/assets/aistudio/LOGO_TQD_b0d93567.png"
+                  alt="Logo Trường Tiểu học Trần Quang Diệu"
+                  className="w-full h-full object-cover scale-[1.24]"
+                />
+              </div>
+              <span className="text-base xl:text-lg font-extrabold text-yellow-300 tracking-wide uppercase drop-shadow whitespace-nowrap">
+                TRƯỜNG TIỂU HỌC TRẦN QUANG DIỆU
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Stars, Progress Bar Trigger, Audio Mute Toggle & Authors */}
+        <div className="pointer-events-auto justify-self-end flex flex-col items-end gap-1.5">
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               type="button"
+              data-testid="btn-hud-progress-bar"
               onClick={scrollToCosmicJourney}
-              className="bg-[#130E38]/95 border-2 border-yellow-400/60 rounded-2xl px-3.5 py-1.5 flex items-center gap-2.5 cursor-pointer hover:border-yellow-300"
-              title="Xem Hành Trình Chinh Phục Vũ Trụ (Cả 4 Chủ Đề)"
+              className="bg-[#130E38]/95 border-2 border-yellow-400/65 rounded-2xl px-3.5 py-1.5 flex items-center gap-2.5 cursor-pointer hover:border-yellow-300 hover:bg-[#1B134C] transition-colors shadow-lg"
+              title="Mở Hành Trình Chinh Phục Vũ Trụ (Cả 4 Chủ Đề)"
             >
               <span className="text-yellow-400 text-lg leading-none">★</span>
               <span
@@ -642,7 +671,10 @@ export default function App() {
               </span>
               <span className="text-indigo-400">·</span>
               <span className="font-mono-num text-xs font-bold text-emerald-300">
-                Tiến độ {overallPercent}%
+                Tiến trình {overallPercent}%
+              </span>
+              <span className="text-[10px] text-yellow-300 font-extrabold hidden sm:inline">
+                {isJourneyOpen ? '▲' : '▼'}
               </span>
             </button>
 
@@ -658,25 +690,43 @@ export default function App() {
               {isMuted ? '🔇' : '🔊'}
             </button>
           </div>
-          <div className="bg-[#130E38]/90 border border-indigo-400/40 rounded-xl px-3 py-1 text-[11px] sm:text-xs font-bold text-indigo-100 shadow-md text-right">
-            Lê Thị Hải Vân - Doãn Thị Phượng - Trường TH Trần Quang Diệu
+          <div
+            data-testid="hud-authors-credit"
+            className="bg-[#130E38]/90 border border-indigo-400/40 rounded-xl px-3 py-1 text-[11px] sm:text-xs font-bold text-indigo-100 shadow-md text-right"
+          >
+            Nhóm tác giả: Lê Thị Hải Vân - Doãn Thị Phượng
           </div>
         </div>
       </div>
 
       {/* Main Content Area by Active Screen */}
-      <main className="relative z-10 flex-1 flex flex-col justify-center py-2">
+      <main className="relative z-10 flex-1 flex flex-col justify-center py-1">
         {activeScreen === 'home' && (
-          <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-3 flex flex-col justify-between gap-5">
+          <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 xl:px-8 py-1.5 flex flex-col justify-between gap-3">
             {/* Title Hero Header + 4-Topic Switcher */}
-            <div className="text-center max-w-6xl mx-auto space-y-2.5">
+            <div className="text-center max-w-6xl mx-auto space-y-1.5">
+              {/* Mobile/Tablet Home School Banner */}
+              <div className="lg:hidden flex items-center justify-center mb-1">
+                <div className="inline-flex items-center gap-2.5 bg-[#130E38]/90 border-2 border-yellow-400/65 rounded-2xl px-3.5 py-1.5 shadow-lg">
+                  <div className="w-9 h-9 rounded-full bg-white border-2 border-yellow-400 overflow-hidden shadow-md shrink-0 flex items-center justify-center">
+                    <img
+                      src="/assets/aistudio/LOGO_TQD_b0d93567.png"
+                      alt="Logo Trường Tiểu học Trần Quang Diệu"
+                      className="w-full h-full object-cover scale-[1.24]"
+                    />
+                  </div>
+                  <span className="text-sm sm:text-base font-extrabold text-yellow-300 tracking-wide uppercase drop-shadow">
+                    TRƯỜNG TIỂU HỌC TRẦN QUANG DIỆU
+                  </span>
+                </div>
+              </div>
               <div className="inline-block text-xs sm:text-sm font-extrabold tracking-wider text-yellow-300 uppercase">
                 HỌC TOÁN THẬT VUI – KHÁM PHÁ THẾ GIỚI HÌNH HỌC LỚP 4!
               </div>
-              <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight drop-shadow-lg">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight drop-shadow-lg">
                 VŨ TRỤ HÌNH HỌC LỚP 4
               </h1>
-              <p className="inline-block bg-[#0B0726]/80 border border-indigo-400/30 rounded-xl px-4 py-1 text-sm sm:text-base font-semibold text-indigo-100 shadow-md">
+              <p className="inline-block bg-[#0B0726]/80 border border-indigo-400/30 rounded-xl px-4 py-0.5 text-sm sm:text-base font-semibold text-indigo-100 shadow-md">
                 {activeTopic === 'angles'
                   ? 'Khám phá thế giới góc – Đo lường thật vui cùng thước đo góc!'
                   : activeTopic === 'perpendicular'
@@ -743,10 +793,10 @@ export default function App() {
               </div>
             </div>
 
-            {/* 3-Zone Home Layout per Specification */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            {/* 3-Zone Home Layout: Wide 3 / 6 / 3 split so side panels NEVER cover the central 3D model */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 xl:gap-8 items-center">
               {/* LEFT ZONE: 3D Math Robot Guide Speech Card */}
-              <div className="lg:col-span-4 card-3d-cosmic rounded-3xl p-5 flex flex-col gap-3.5 border-2 border-sky-400/60">
+              <div className="lg:col-span-3 card-3d-cosmic rounded-3xl p-4 flex flex-col gap-3 border-2 border-sky-400/60">
                 <div className="flex items-center gap-3">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 border-2 border-yellow-400 flex items-center justify-center overflow-hidden shadow-md shrink-0">
                     <img
@@ -900,9 +950,9 @@ export default function App() {
                 )}
               </div>
 
-              {/* CENTER ZONE: Open Negative Space Viewport for 3D Robot, Planets & 3D Hologram */}
-              <div className="lg:col-span-4 min-h-[210px] sm:min-h-[270px] flex flex-col items-center justify-end pointer-events-none">
-                <div className="pointer-events-auto bg-[#0B0726]/90 border border-indigo-400/40 rounded-2xl px-4 py-2.5 text-center shadow-xl">
+              {/* CENTER ZONE: Generous 50% Open Negative Space Viewport for 3D Hologram */}
+              <div className="lg:col-span-6 min-h-[240px] sm:min-h-[360px] flex flex-col items-center justify-end pointer-events-none">
+                <div className="pointer-events-auto bg-[#0B0726]/90 border border-cyan-400/45 rounded-2xl px-4 py-2 text-center shadow-xl">
                   <div className="text-xs sm:text-sm font-extrabold text-indigo-100 tracking-wide">
                     {activeTopic === 'angles'
                       ? 'ĐÀI QUAN SÁT GÓC 3D TRUNG TÂM'
@@ -915,8 +965,8 @@ export default function App() {
                 </div>
               </div>
 
-              {/* RIGHT ZONE: 4 Large 3D Feature Buttons for the Active Topic */}
-              <div className="lg:col-span-4 flex flex-col gap-3">
+              {/* RIGHT ZONE: 4 Feature Buttons for the Active Topic */}
+              <div className="lg:col-span-3 flex flex-col gap-2.5">
                 {activeTopic === 'angles' ? (
                   <>
                     <button
@@ -1233,24 +1283,48 @@ export default function App() {
               </div>
             </div>
 
-            {/* Flat Bottom Control Hint Line */}
-            <div className="text-center text-xs font-semibold text-indigo-300/90 pt-1">
-              {activeTopic === 'angles'
-                ? 'Kéo thả chuột / chạm cảm ứng để di chuyển thước đo góc · Nhấn Enter hoặc Space để vào nhanh Phòng Thực Hành'
-                : 'Chọn Chủ đề 1, 2, 3 hoặc 4 phía trên để chuyển đổi linh hoạt giữa Đo Góc, Vuông Góc, Song Song và Hình Thoi, Hình Bình Hành'}
+            {/* Compact Clickable Learning Progress Bar Trigger (Opens HÀNH TRÌNH CHINH PHỤC VŨ TRỤ on Click) */}
+            <div className="max-w-3xl w-full mx-auto">
+              <button
+                type="button"
+                data-testid="btn-learning-progress-bar"
+                onClick={() => {
+                  soundFX.playClick(1.1);
+                  setIsJourneyOpen(true);
+                }}
+                className="w-full rounded-2xl bg-[#110C35]/90 hover:bg-[#19124B]/95 border-2 border-cyan-400/55 hover:border-yellow-400 px-4 py-2.5 shadow-xl cursor-pointer transition-all group text-left"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🚀</span>
+                    <span className="text-xs sm:text-sm font-extrabold text-white tracking-wide uppercase">
+                      Thanh tiến trình học tập
+                    </span>
+                    <span className="text-[11px] font-bold text-cyan-200 hidden sm:inline">
+                      · Bấm để mở Hành Trình Chinh Phục Vũ Trụ &amp; Khen thưởng PDF
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-xs font-extrabold">
+                    <span className="text-yellow-300 font-mono-num">
+                      ★ {journeyTotals.totalStars} Sao
+                    </span>
+                    <span className="text-indigo-400">·</span>
+                    <span className="text-emerald-300 font-mono-num">
+                      {journeyTotals.completedTopicsCount}/{journeyTotals.totalTopicsCount} chủ đề ({overallPercent}%)
+                    </span>
+                    <span className="px-2 py-0.5 rounded-lg bg-yellow-400/20 border border-yellow-400/50 text-yellow-300 group-hover:bg-yellow-400 group-hover:text-slate-950 transition-colors text-[11px]">
+                      Xem chi tiết ▾
+                    </span>
+                  </div>
+                </div>
+                <div className="w-full h-2.5 rounded-full bg-slate-950/90 border border-indigo-400/35 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-yellow-400 via-cyan-400 to-fuchsia-400 transition-all duration-500"
+                    style={{ width: `${Math.max(overallPercent, 3)}%` }}
+                  />
+                </div>
+              </button>
             </div>
-
-            {/* Dedicated Bottom Home Section: HÀNH TRÌNH CHINH PHỤC VŨ TRỤ (All 4 Topics + PDF Rewards) */}
-            <CosmicJourneySection
-              progress={progress}
-              onNavigateScreen={(screenId, topicId) => {
-                setActiveTopic(topicId);
-                navigateTo(screenId as ScreenId);
-              }}
-              onChangeStudentInfo={handleChangeStudentInfo}
-              onOpenCertificateModal={(target) => setRewardModalTarget(target)}
-              onResetTopic={handleResetTopic}
-            />
           </div>
         )}
 
@@ -1444,6 +1518,35 @@ export default function App() {
         )}
       </main>
 
+      {/* Toggleable HÀNH TRÌNH CHINH PHỤC VŨ TRỤ Modal (Opens only when clicking Thanh tiến trình học tập) */}
+      {isJourneyOpen && (
+        <div
+          data-testid="cosmic-journey-modal-backdrop"
+          className="fixed inset-0 z-[60] bg-[#050316]/85 backdrop-blur-sm overflow-y-auto px-3 sm:px-6 py-6 flex items-start justify-center"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              soundFX.playClick();
+              setIsJourneyOpen(false);
+            }
+          }}
+        >
+          <div className="w-full max-w-6xl my-auto">
+            <CosmicJourneySection
+              progress={progress}
+              onNavigateScreen={(screenId, topicId) => {
+                setIsJourneyOpen(false);
+                setActiveTopic(topicId);
+                navigateTo(screenId as ScreenId);
+              }}
+              onChangeStudentInfo={handleChangeStudentInfo}
+              onOpenCertificateModal={(target) => setRewardModalTarget(target)}
+              onResetTopic={handleResetTopic}
+              onClose={() => setIsJourneyOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Topic Completion Celebration & PDF Reward Certificate Modal */}
       <TopicRewardModal
         target={rewardModalTarget}
@@ -1454,6 +1557,9 @@ export default function App() {
         onChangeStudentInfo={handleChangeStudentInfo}
         onClose={() => setRewardModalTarget(null)}
       />
+
+      {/* Floating Grade 4 Math AI Assistant Widget */}
+      <MathTutorWidget activeTopic={activeTopic} />
     </div>
   );
 }

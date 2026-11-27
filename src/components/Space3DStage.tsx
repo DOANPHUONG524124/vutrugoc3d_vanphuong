@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import neonGalaxyBgUrl from '../assets/images/neon_galaxy_sky_1795815723572.jpg';
 import { classifyAngle } from '../utils/angleMath';
 
 interface Space3DStageProps {
@@ -11,86 +12,9 @@ interface Space3DStageProps {
 }
 
 // Pre-allocated scratch math objects outside the animation loop (Zero-GC rule)
-const _scratchVec3 = new THREE.Vector3();
 const _targetCameraPos = new THREE.Vector3();
 const _targetLookAt = new THREE.Vector3();
-const _currentLookAt = new THREE.Vector3(0, 0.5, 0);
-
-function createPlanetCanvasTexture(baseHex: string, stripeHex: string, rendererMaxAnisotropy: number): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 128;
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    ctx.fillStyle = baseHex;
-    ctx.fillRect(0, 0, 256, 128);
-    ctx.fillStyle = stripeHex;
-    for (let y = 12; y < 120; y += 22) {
-      ctx.globalAlpha = 0.35;
-      ctx.fillRect(0, y, 256, 8);
-    }
-    ctx.globalAlpha = 0.2;
-    for (let i = 0; i < 24; i++) {
-      ctx.beginPath();
-      ctx.arc((i * 47) % 256, (i * 29) % 128, 4 + (i % 6), 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = rendererMaxAnisotropy;
-  return tex;
-}
-
-const COMPANION_ROBOT_IMG_URL = '/assets/aistudio/Th_m_ti_u____9352a9ad.png';
-
-/**
- * Builds the floating 3D Companion Robot billboard using the attached character artwork
- * with a soft contact shadow disc underneath.
- */
-function buildMathRobotGroup(
-  maxAnisotropy: number,
-  texturesToDispose: THREE.Texture[]
-): THREE.Group {
-  const robot = new THREE.Group();
-
-  // 1. Contact shadow disc at y = 0.015
-  const shadowGeo = new THREE.CircleGeometry(1.15, 24);
-  shadowGeo.rotateX(-Math.PI / 2);
-  const shadowMat = new THREE.MeshBasicMaterial({
-    color: 0x000000,
-    transparent: true,
-    opacity: 0.42,
-    depthWrite: false,
-  });
-  const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-  shadowMesh.position.y = 0.015;
-  robot.add(shadowMesh);
-
-  // 2. Character cutout plane (aspect 3120x1755 = 16:9)
-  const loader = new THREE.TextureLoader();
-  const charTex = loader.load(COMPANION_ROBOT_IMG_URL);
-  charTex.colorSpace = THREE.SRGBColorSpace;
-  charTex.anisotropy = maxAnisotropy;
-  texturesToDispose.push(charTex);
-
-  const planeHeight = 3.5;
-  const planeWidth = planeHeight * (3120 / 1755);
-  const charGeo = new THREE.PlaneGeometry(planeWidth, planeHeight);
-  const charMat = new THREE.MeshBasicMaterial({
-    map: charTex,
-    transparent: true,
-    alphaTest: 0.05,
-    side: THREE.DoubleSide,
-  });
-  const charMesh = new THREE.Mesh(charGeo, charMat);
-  charMesh.position.y = planeHeight / 2 + 0.1;
-  robot.add(charMesh);
-
-  return robot;
-}
+const _currentLookAt = new THREE.Vector3(0, 0.35, 0);
 
 /**
  * Builds the 3D Holographic Angle Stage in the center of the cosmic arena
@@ -854,17 +778,18 @@ export const Space3DStage: React.FC<Space3DStageProps> = ({
     const height = container.clientHeight || window.innerHeight;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0B0726);
-    scene.fog = new THREE.FogExp2(0x0B0726, 0.018);
+    scene.background = null;
 
-    const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 120);
-    camera.position.set(0, 2.2, 9.5);
+    const camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 120);
+    camera.position.set(0, 1.35, 9.3);
 
     const renderer = new THREE.WebGLRenderer({
+      alpha: true,
       antialias: !isSoftwareGl,
       powerPreference: 'high-performance',
       preserveDrawingBuffer: true,
     });
+    renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
@@ -885,7 +810,7 @@ export const Space3DStage: React.FC<Space3DStageProps> = ({
     }
 
     // Warm/Cool Studio Lighting
-    const hemiLight = new THREE.HemisphereLight(0x818CF8, 0x0B0726, 0.95);
+    const hemiLight = new THREE.HemisphereLight(0x818CF8, 0x0B0726, 1.0);
     scene.add(hemiLight);
 
     const keyLight = new THREE.DirectionalLight(0xFFF3D1, 1.55);
@@ -898,37 +823,28 @@ export const Space3DStage: React.FC<Space3DStageProps> = ({
     }
     scene.add(keyLight);
 
-    const rimLight = new THREE.DirectionalLight(0xFF2E93, 0.75);
+    const rimLight = new THREE.DirectionalLight(0x38BDF8, 0.85);
     rimLight.position.set(-7, 4, -5);
     scene.add(rimLight);
 
-    const maxAniso = renderer.capabilities.getMaxAnisotropy();
-    const texturesToDispose: THREE.Texture[] = [];
-
-    // 1. Build 3D Math Robot on left side
-    const robotGroup = buildMathRobotGroup(maxAniso, texturesToDispose);
-    robotGroup.position.set(-3.8, -1.35, 1.2);
-    robotGroup.rotation.y = 0.22;
-    scene.add(robotGroup);
-
-    // 2a. Build Topic 1: 3D Holographic Angle Stage (semicircular protractor arch)
+    // 1a. Build Topic 1: 3D Holographic Angle Stage (semicircular protractor arch)
     const holoStage = build3DAngleHoloStage();
-    holoStage.group.position.set(0, -0.45, 0);
+    holoStage.group.position.set(0, -1.05, 0);
     scene.add(holoStage.group);
 
-    // 2b. Build Topic 2: 3D Perpendicular Lines + 4 Right Angles + Beveled Ê Ke Stage
+    // 1b. Build Topic 2: 3D Perpendicular Lines + 4 Right Angles + Beveled Ê Ke Stage
     const perpStage = build3DPerpendicularHoloStage();
-    perpStage.group.position.set(0, 0.22, 0.35);
+    perpStage.group.position.set(0, -0.25, 0.35);
     scene.add(perpStage.group);
 
-    // 2c. Build Topic 3: 3D Parallel Lines + Equal-Distance Struts + Gliding Cosmic Train
+    // 1c. Build Topic 3: 3D Parallel Lines + Equal-Distance Struts + Gliding Cosmic Train
     const parStage = build3DParallelHoloStage();
-    parStage.group.position.set(0, 0.34, 0.42);
+    parStage.group.position.set(0, -0.15, 0.42);
     scene.add(parStage.group);
 
-    // 2d. Build Topic 4: 3D Parallelogram & Rhombus Crystals Stage
+    // 1d. Build Topic 4: 3D Parallelogram & Rhombus Crystals Stage
     const shapesStage = build3DShapesHoloStage();
-    shapesStage.group.position.set(0, 0.32, 0.44);
+    shapesStage.group.position.set(0, -0.18, 0.44);
     scene.add(shapesStage.group);
 
     const initialStageMode = resolveStageTopicMode(
@@ -940,69 +856,29 @@ export const Space3DStage: React.FC<Space3DStageProps> = ({
     parStage.group.visible = initialStageMode === 'parallel';
     shapesStage.group.visible = initialStageMode === 'shapes';
 
-    // 3. Build 4 Orbiting Planets around the universe
-    const planetConfigs = [
-      { pos: [-5.5, 2.6, -4.5], radius: 0.75, base: '#FACC15', stripe: '#CA8A04', hasRing: true },
-      { pos: [5.2, 2.8, -5.0], radius: 0.95, base: '#FF2E93', stripe: '#9D174D', hasRing: true },
-      { pos: [4.6, -1.8, -3.8], radius: 0.65, base: '#22C55E', stripe: '#15803D', hasRing: false },
-      { pos: [-4.8, -2.1, -6.0], radius: 0.8, base: '#38BDF8', stripe: '#0369A1', hasRing: false },
-    ];
-    const planets: THREE.Group[] = [];
-
-    planetConfigs.forEach((cfg) => {
-      const pGroup = new THREE.Group();
-      pGroup.position.set(cfg.pos[0], cfg.pos[1], cfg.pos[2]);
-
-      const tex = createPlanetCanvasTexture(cfg.base, cfg.stripe, maxAniso);
-      texturesToDispose.push(tex);
-      const pMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        map: tex,
-        roughness: 0.55,
-        metalness: 0.15,
-      });
-      const sphere = new THREE.Mesh(new THREE.SphereGeometry(cfg.radius, 24, 24), pMat);
-      pGroup.add(sphere);
-
-      if (cfg.hasRing) {
-        const ringMat = new THREE.MeshStandardMaterial({
-          color: cfg.base,
-          roughness: 0.35,
-          metalness: 0.5,
-          side: THREE.DoubleSide,
-        });
-        const ring = new THREE.Mesh(
-          new THREE.RingGeometry(cfg.radius * 1.35, cfg.radius * 1.85, 32),
-          ringMat
-        );
-        ring.rotation.x = Math.PI * 0.4;
-        ring.rotation.y = 0.25;
-        pGroup.add(ring);
-      }
-
-      scene.add(pGroup);
-      planets.push(pGroup);
-    });
-
-    // 4. InstancedMesh Starfield (160 stars -> InstancedMesh per >20 items rule)
-    const starCount = 160;
-    const starGeo = new THREE.OctahedronGeometry(0.08, 0);
+    // 2. Delicate Neon Twinkling Starfield (InstancedMesh — no giant distracting planets)
+    const starCount = 120;
+    const starGeo = new THREE.OctahedronGeometry(0.055, 0);
     const starMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const starInstanced = new THREE.InstancedMesh(starGeo, starMat, starCount);
     const dummy = new THREE.Object3D();
-    const starColors = [new THREE.Color(0xFFFFFF), new THREE.Color(0xFACC15), new THREE.Color(0x38BDF8), new THREE.Color(0xFF2E93)];
+    const starColors = [
+      new THREE.Color(0xFFFFFF),
+      new THREE.Color(0x38BDF8),
+      new THREE.Color(0xA855F7),
+      new THREE.Color(0x22D3EE),
+    ];
 
     for (let i = 0; i < starCount; i++) {
-      // Deterministic golden-ratio spiral distribution
       const t = i / starCount;
       const angle = i * 2.39996;
-      const dist = 6 + (i % 18) * 1.4;
+      const dist = 7 + (i % 16) * 1.45;
       dummy.position.set(
         Math.cos(angle) * dist,
-        (t - 0.5) * 16,
-        -3 - (i % 15) * 1.5
+        (t - 0.5) * 15,
+        -4 - (i % 12) * 1.5
       );
-      const s = 0.6 + (i % 5) * 0.28;
+      const s = 0.55 + (i % 4) * 0.25;
       dummy.scale.set(s, s, s);
       dummy.updateMatrix();
       starInstanced.setMatrixAt(i, dummy.matrix);
@@ -1101,23 +977,18 @@ export const Space3DStage: React.FC<Space3DStageProps> = ({
       shapesStage.rhombusCrystal.position.y = 0.14 + Math.cos(elapsed * 1.8) * 0.11;
       shapesStage.rhombusCrystal.rotation.y = -Math.sin(elapsed * 1.15) * 0.38;
 
-      // Gentle idle animation for Robot & Planets
-      robotGroup.position.y = -1.35 + Math.sin(elapsed * 2.1) * 0.12;
-      robotGroup.rotation.y = 0.22 + Math.sin(elapsed * 1.2) * 0.08;
+      // Gentle drift for neon micro-starfield
+      starInstanced.rotation.z = elapsed * 0.015;
 
-      for (let i = 0; i < planets.length; i++) {
-        planets[i].rotation.y = elapsed * (0.25 + i * 0.08);
-      }
-
-      // Camera choreography per screen
+      // Camera choreography per screen (framed cleanly inside wide center showcase)
       if (scr === 'home') {
-        _targetCameraPos.set(0, 1.4, 8.8);
-        _targetLookAt.set(0, 0.4, 0);
+        _targetCameraPos.set(0, 1.3, 10.6);
+        _targetLookAt.set(0, 0.28, 0);
       } else if (scr === 'explore') {
-        _targetCameraPos.set(0.4, 1.1, 7.2);
+        _targetCameraPos.set(0.4, 1.1, 7.6);
         _targetLookAt.set(0, 0.3, 0);
       } else {
-        _targetCameraPos.set(0, 2.6, 11.2);
+        _targetCameraPos.set(0, 2.5, 11.4);
         _targetLookAt.set(0, 0, 0);
       }
 
@@ -1155,7 +1026,6 @@ export const Space3DStage: React.FC<Space3DStageProps> = ({
       clearTimeout(frameId);
       window.removeEventListener('resize', handleResize);
       if (envTarget) envTarget.dispose();
-      texturesToDispose.forEach((t) => t.dispose());
       renderer.dispose();
       if (renderer.domElement.parentNode === container) {
         container.removeChild(renderer.domElement);
@@ -1165,10 +1035,30 @@ export const Space3DStage: React.FC<Space3DStageProps> = ({
 
   return (
     <div
-      ref={mountRef}
-      data-testid="space-3d-canvas-container"
-      className="fixed inset-0 w-full h-full pointer-events-none z-0"
+      className="fixed inset-0 w-full h-full pointer-events-none z-0 overflow-hidden bg-[#07041A]"
       aria-hidden="true"
-    />
+    >
+      {/* Shimmering Neon Glowing Galaxy Sky Background Image */}
+      <img
+        src={neonGalaxyBgUrl}
+        alt=""
+        referrerPolicy="no-referrer"
+        className="absolute inset-0 w-full h-full object-cover opacity-90 scale-[1.02]"
+      />
+      {/* Subtle deep-space radial veil so central 3D models & crisp UI text stand out effortlessly */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(circle at 50% 48%, rgba(7, 4, 26, 0.18) 0%, rgba(7, 4, 26, 0.45) 68%, rgba(5, 3, 20, 0.72) 100%)',
+        }}
+      />
+      {/* Transparent Three.js WebGL Stage */}
+      <div
+        ref={mountRef}
+        data-testid="space-3d-canvas-container"
+        className="absolute inset-0 w-full h-full"
+      />
+    </div>
   );
 };
